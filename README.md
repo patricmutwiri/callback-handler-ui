@@ -1,52 +1,107 @@
----
-name: Vercel Cron Job Example
-slug: vercel-cron
-description: A Next.js app that uses Vercel Cron Jobs to update data at different intervals.
-framework: Next.js
-useCase:
-  - Cron
-  - Functions
-css: Tailwind
-database: Vercel KV
-deployUrl: https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fsolutions%2Fcron&project-name=cron&repository-name=cron&demo-title=Vercel%20Cron%20Job%20Example&demo-description=A%20Next.js%20app%20that%20uses%20Vercel%20Cron%20Jobs%20to%20update%20data%20at%20different%20intervals.&demo-url=https%3A%2F%2Fcron-template.vercel.app%2F&demo-image=https%3A%2F%2Fcron-template.vercel.app%2Fthumbnail.png&stores=%5B%7B"type"%3A"kv"%7D%5D
-demoUrl: https://cron-template.vercel.app/
-relatedTemplates:
-  - hacker-news-slack-bot
-  - cron-og
----
+# Callback Handler (UI)
 
-# Vercel Cron Job Example
+A lightweight tool to generate unique URLs for capturing, inspecting, and debugging HTTP requests (webhooks, callbacks, etc.) in real-time. Built with Next.js and Vercel KV.
 
-A Next.js app that uses [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) to update data at different intervals.
+## Features
 
-## Demo
+- **Unique Slugs**: Generate random, date-stamped slugs (e.g., `x7z9-0112`) to ensure uniqueness and sorting needs in future.
+- **Universal Capture**: Records ALL HTTP methods (`GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `OPTIONS`, etc.).
+- **Smart Detection**: automatically distinguishes between browser visits (to show the UI) and API requests (to be recorded).
+- **Request Inspection**: View headers, body (JSON), query parameters, IP address, and timestamp.
+- **Persistance**: Requests are stored in [Vercel KV](https://vercel.com/docs/storage/vercel-kv) (Redis). This is handled in the backend, currently using free tier as at Jan 12 2026.
 
-https://cron-template.vercel.app/
+## Technology Stack
 
-## How to Use
+- **Framework**: [Next.js](https://nextjs.org/)
+- **Database**: [Vercel KV](https://vercel.com/docs/storage/vercel-kv) (Upstash Redis)
+- **Styling**: Tailwind CSS (via `@vercel/examples-ui`)
+- **Deployment**: Vercel
+- **Version Control**: Github (Ofcourse)
 
-You can choose from one of the following two methods to use this repository:
+## Getting Started
 
-### One-Click Deploy
+### Prerequisites
 
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=examples-repo):
+- Positive Attitude
+- Node.js 18+
+- A Vercel account (for KV storage)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fexamples%2Ftree%2Fmain%2Fsolutions%2Fcron&project-name=cron&repository-name=cron&demo-title=Vercel%20Cron%20Job%20Example&demo-description=A%20Next.js%20app%20that%20uses%20Vercel%20Cron%20Jobs%20to%20update%20data%20at%20different%20intervals.&demo-url=https%3A%2F%2Fcron-template.vercel.app%2F&demo-image=https%3A%2F%2Fcron-template.vercel.app%2Fthumbnail.png&stores=%5B%7B"type"%3A"kv"%7D%5D)
+### Installation
 
-Don't forget to set the required environment variables that you got from the previous step.
-
-### Clone and Deploy
-
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [pnpm](https://pnpm.io/installation) to bootstrap the example:
+0. Housekeeping.
 
 ```bash
-pnpm create next-app --example https://github.com/vercel/examples/tree/main/solutions/cron cron
+  - Please star the repo, it means a lot to me.
+  - Raise issues if you find any.
+  - Sponsor the project too, your support will go a long way.
 ```
 
-Next, run Next.js in development mode:
+1.  **Clone the repository**:
+
+    ```bash
+    git clone https://github.com/patricmutwiri/callback-handler-ui.git
+    cd callback-handler-ui
+    ```
+
+2.  **Install dependencies**:
+
+    ```bash
+    npm install
+    ```
+
+3.  **Configure Environment Variables**:
+    Copy the example environment file:
+
+    ```bash
+    cp .env.example .env.local
+    ```
+
+    Fill in your Vercel KV credentials in `.env.local`:
+
+    ```env
+    KV_URL="redis://..."
+    KV_REST_API_URL="https://..."
+    KV_REST_API_TOKEN="..."
+    KV_REST_API_READ_ONLY_TOKEN="..."
+    ```
+
+4.  **Run Locally**:
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Usage
+
+### 1. Generate a Slug
+
+Visit the home page. You can enter a custom slug or click **Random** to generate one (e.g., `my-test-0112`). Click **Start Recording** to proceed to your dashboard.
+
+### 2. Send Requests
+
+Use the generated URL to send any HTTP request.
+
+**Example (cURL):**
 
 ```bash
-pnpm dev
+curl -X POST http://localhost:3000/record/my-test-0112 \
+  -H "Content-Type: application/json" \
+  -d '{"event": "user_signup", "id": 123}'
 ```
 
-Deploy it to the cloud with [Vercel](https://vercel.com/new?utm_source=github&utm_medium=readme&utm_campaign=examples-repo) ([Documentation](https://nextjs.org/docs/deployment)).
+**Example (Webhook):**
+Configure your 3rd party service (Stripe, Slack, etc.) to allow the generated URL as the webhook endpoint.
+
+### 3. Inspect Requests
+
+Refresh the dashboard page (`/record/[slug]`) to see the incoming requests appear. You can see the method, timestamp, headers, and body payload.
+
+## Deployment
+
+Deploy easily with Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fpatricmutwiri%2Fcallback-handler-ui)
+
+## Outro
+
+Made with ❤️ for us by us. Happy Coding!
