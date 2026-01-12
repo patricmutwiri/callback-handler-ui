@@ -12,7 +12,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
         <div className="max-w-[90vw] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-17">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img src="/logo.png" alt="Callback Handler" className="w-20 h-20" />
               <span className="font-semibold text-lg">Callback Handler</span>

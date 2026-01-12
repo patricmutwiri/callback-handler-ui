@@ -43,9 +43,6 @@ export default function Home() {
       />
       
       <section className="flex flex-col gap-6 mx-auto mt-12 text-center max-w-[50vw] relative">
-        <div className="flex justify-center">
-          <img src="/logo.png" alt="Callback Handler Logo" className="w-20 h-20" />
-        </div>
         <Text variant="h1">Callback Handler</Text>
         <Text>
           Generate a unique URL to capture HTTP requests and callbacks. 

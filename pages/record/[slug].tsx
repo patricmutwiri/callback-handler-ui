@@ -230,6 +230,17 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         <title>Recorded Requests: {slug}</title>
       </Head>
 
+      {/* Background Graphic */}
+      <div 
+        className="fixed inset-0 z-[-1]"
+        style={{ 
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.95)), url(/records-bg.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        }}
+      />
+
       <section className="flex flex-col gap-6">
         <div className="flex justify-between items-center">
           <Link href="/" className="text-sm text-gray-500 hover:text-black transition-colors inline-flex items-center gap-1">
