@@ -1,5 +1,5 @@
-import { Layout, Text, Code, Page, Link } from '@vercel/examples-ui'
 import Post from '@/components/post'
+import { Code, Layout, Link, Page, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 
 const intervals = [
