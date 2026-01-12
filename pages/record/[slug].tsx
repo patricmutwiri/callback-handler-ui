@@ -196,7 +196,6 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
             </svg>
             Create New
           </Link>
-          <img src="/logo.png" alt="Callback Handler Logo" className="w-10 h-10" />
         </div>
 
         <div>
