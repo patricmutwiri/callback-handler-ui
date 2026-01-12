@@ -11,7 +11,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[90vw] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img src="/logo.png" alt="Callback Handler" className="w-20 h-20" />
@@ -34,7 +34,7 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className="bg-white flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="bg-white flex-1 max-w-[90vw] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {children}
       </main>
 

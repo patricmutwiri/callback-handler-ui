@@ -1,4 +1,4 @@
-import { Code, Link, Page, Text } from '@vercel/examples-ui'
+import { Code, Link, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
@@ -13,6 +13,8 @@ interface RequestData {
   body: any
   query: Record<string, any>
   ip: string
+  responseStatus?: number
+  responseBody?: any
 }
 
 interface Props {
@@ -53,25 +55,27 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       const forwarded = req.headers['x-forwarded-for']
       const ip = typeof forwarded === 'string' ? forwarded.split(/, /)[0] : req.socket.remoteAddress
 
-      const requestData = {
+      // Fetch custom response config
+      const configKey = `config:${slug}`
+      const rawConfig = await kv.get(configKey)
+      const config = (typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig) || { status: 200, body: '{"success": true}' }
+
+      const requestData: RequestData = {
         id: crypto.randomUUID(),
         timestamp,
-        method: req.method,
+        method: req.method || 'UNKNOWN',
         headers: req.headers,
         body: body || null,
         query: query,
-        ip,
+        ip: ip || 'unknown',
+        responseStatus: config.status,
+        responseBody: config.body
       }
 
       // Store in Redis List
       await kv.lpush(key, JSON.stringify(requestData))
       // Keep only last 100 requests
       await kv.ltrim(key, 0, 99)
-
-      // Fetch custom response config
-      const configKey = `config:${slug}`
-      const rawConfig = await kv.get(configKey)
-      const config = (typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig) || { status: 200, body: '{"success": true}' }
 
       res.statusCode = config.status
       res.setHeader('Content-Type', 'application/json')
@@ -164,6 +168,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       mutateConfig()
       alert('Response configuration saved!')
     } catch (e) {
+      console.error('Failed to save configuration:', e)
       alert('Failed to save configuration')
     } finally {
       setIsSavingConfig(false)
@@ -180,8 +185,30 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const getMethodColor = (method: string) => {
+    switch (method?.toUpperCase()) {
+      case 'POST': return 'bg-green-100 text-green-800'
+      case 'GET': return 'bg-blue-100 text-blue-800'
+      case 'PUT': return 'bg-yellow-100 text-yellow-800'
+      case 'DELETE': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusColor = (status: number) => {
+    if (status < 300) return 'bg-green-100 text-green-700'
+    if (status < 400) return 'bg-yellow-100 text-yellow-700'
+    return 'bg-red-100 text-red-700'
+  }
+
+  const copyDataToClipboard = (data: any, label: string) => {
+    const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
+    navigator.clipboard.writeText(text)
+    alert(`${label} copied to clipboard!`)
+  }
+
   return (
-    <Page>
+    <>
       <Head>
         <title>Recorded Requests: {slug}</title>
       </Head>
@@ -280,37 +307,110 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
           <Text>No requests recorded yet (or refresh to see new ones).</Text>
         ) : (
           requests.map((req) => (
-            <div key={req.id} className="p-4 border border-gray-200 rounded-lg shadow-sm">
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex gap-2 items-center">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${req.method === 'POST' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+            <div key={req.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden">
+              <div className="flex justify-between items-center mb-4 pb-2 border-b">
+                <div className="flex gap-3 items-center">
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${getMethodColor(req.method)}`}>
                     {req.method}
                   </span>
+                  <Text className="text-xs text-gray-400 font-mono">{req.id.substring(0, 8)}</Text>
                   <Text className="text-sm text-gray-500">{new Date(req.timestamp).toLocaleString()}</Text>
                 </div>
-                <Text className="text-xs text-gray-400">{req.ip}</Text>
+                <Text className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">IP: {req.ip}</Text>
               </div>
               
-              <div className="grid gap-2 text-sm">
-                <div>
-                  <Text className="text-xs uppercase text-gray-500 mb-1">Headers</Text>
-                  <pre className="bg-gray-50 p-2 rounded overflow-auto max-h-32 text-xs">
-                    {JSON.stringify(req.headers, null, 2)}
-                  </pre>
-                </div>
-                {req.body && (
-                  <div>
-                    <Text className="text-xs uppercase text-gray-500 mb-1">Body</Text>
-                    <pre className="bg-gray-50 p-2 rounded overflow-auto max-h-40 text-xs">
-                      {JSON.stringify(req.body, null, 2)}
-                    </pre>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Column 1: Headers */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center border-b pb-1">
+                    <Text className="text-xs uppercase font-bold text-gray-400">Headers</Text>
+                    <button 
+                      onClick={() => copyDataToClipboard(req.headers, 'Headers')}
+                      className="text-gray-400 hover:text-black transition-colors"
+                      title="Copy Headers"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                    </button>
                   </div>
-                )}
+                  <div className="flex flex-col gap-1.5 overflow-auto max-h-64 pr-2 scrollbar-thin">
+                    {Object.entries(req.headers).map(([key, value]) => (
+                      <div key={key} className="text-xs break-all text-gray-800">
+                        <span className="font-semibold text-gray-500 uppercase mr-1" style={{fontSize: '10px'}}>{key}:</span>
+                        <span className="font-mono bg-gray-50 px-1 rounded">{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Column 2: Request Payload */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center border-b pb-1">
+                    <Text className="text-xs uppercase font-bold text-gray-400">Request Payload</Text>
+                    {req.body && (
+                      <button 
+                        onClick={() => copyDataToClipboard(req.body, 'Payload')}
+                        className="text-gray-400 hover:text-black transition-colors"
+                        title="Copy Payload"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                  {req.body ? (
+                    <pre className="bg-gray-50 p-3 border rounded text-xs overflow-auto max-h-48 font-mono text-gray-700 whitespace-pre-wrap">
+                      {typeof req.body === 'string' ? req.body : JSON.stringify(req.body, null, 2)}
+                    </pre>
+                  ) : (
+                    <div className="h-full flex items-center justify-center border-2 border-dashed rounded-md bg-gray-50 py-10">
+                      <Text className="text-xs text-gray-400 italic">No payload provided</Text>
+                    </div>
+                  )}
+                </div>
+
+                {/* Column 3: Mock Response */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center border-b pb-1">
+                    <Text className="text-xs uppercase font-bold text-gray-400">Mock Response</Text>
+                    <button 
+                      onClick={() => copyDataToClipboard(req.responseBody || {"success": true}, 'Response')}
+                      className="text-gray-400 hover:text-black transition-colors"
+                      title="Copy Response"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-gray-500 uppercase" style={{fontSize: '10px'}}>Status:</span>
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusColor(req.responseStatus || 200)}`}>
+                        {req.responseStatus || 200}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-bold text-gray-500 uppercase" style={{fontSize: '10px'}}>Body:</span>
+                      <pre className="bg-gray-50 p-3 border rounded text-xs overflow-auto max-h-48 font-mono text-gray-700 whitespace-pre-wrap">
+                        {typeof req.responseBody === 'string' ? 
+                          req.responseBody : 
+                          JSON.stringify(req.responseBody || {"success": true}, null, 2)
+                        }
+                      </pre>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           ))
         )}
       </section>
-    </Page>
+    </>
   )
 }

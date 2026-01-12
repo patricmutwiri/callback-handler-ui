@@ -1,4 +1,4 @@
-import { Code, Page, Text } from '@vercel/examples-ui'
+import { Code, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
@@ -25,13 +25,13 @@ export default function Home() {
   }
 
   return (
-    <Page>
+    <>
       <Head>
         <title>Callback Handler</title>
         <meta name="description" content="Record and inspect HTTP requests" />
       </Head>
       
-      <section className="flex flex-col gap-6 max-w-2xl mx-auto mt-12 text-center">
+      <section className="flex flex-col gap-6 mx-auto mt-12 text-center w-full">
         <div className="flex justify-center">
           <img src="/logo.png" alt="Callback Handler Logo" className="w-20 h-20" />
         </div>
@@ -76,7 +76,7 @@ export default function Home() {
             </div>
             {slug && (
               <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-500 break-all">
-                Your endpoint: <Code>https://{typeof window !== 'undefined' ? window.location.host : '...'}/record/{slug}</Code>
+                Your endpoint: <Code>https://{globalThis.window === undefined ? '...' : globalThis.window.location.host}/record/{slug}</Code>
               </div>
             )}
           </div>
@@ -89,6 +89,6 @@ export default function Home() {
           </button>
         </form>
       </section>
-    </Page>
+    </>
   )
 }
