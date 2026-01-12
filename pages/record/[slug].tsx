@@ -2,6 +2,7 @@ import { Code, Link, Page, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
+import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 
 interface RequestData {
@@ -67,8 +68,14 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       // Keep only last 100 requests
       await kv.ltrim(key, 0, 99)
 
+      // Fetch custom response config
+      const configKey = `config:${slug}`
+      const rawConfig = await kv.get(configKey)
+      const config = (typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig) || { status: 200, body: '{"success": true}' }
+
+      res.statusCode = config.status
       res.setHeader('Content-Type', 'application/json')
-      res.write(JSON.stringify({ success: true, request: requestData }))
+      res.write(typeof config.body === 'string' ? config.body : JSON.stringify(config.body))
       res.end()
 
       return { props: {} }
@@ -88,6 +95,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       try {
         return typeof req === 'string' ? JSON.parse(req) : req
       } catch (e) {
+        console.error('Failed to parse request JSON:', e)
         return null
       }
     }).filter(Boolean) as RequestData[]
@@ -111,15 +119,66 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
   }
 }
 
+interface ResponseConfig {
+  status: number
+  body: string
+}
+
 export default function RecordPage({ slug, requests: initialRequests = [], host }: Props) {
+  const [copied, setCopied] = useState(false)
+  const [isSavingConfig, setIsSavingConfig] = useState(false)
+  const [localConfig, setLocalConfig] = useState<ResponseConfig>({
+    status: 200,
+    body: '{"success": true}'
+  })
+  
   const { data: requests = initialRequests } = useSWR<RequestData[]>(
     `/api/record/${slug}`,
     fetcher,
     {
       fallbackData: initialRequests,
-      refreshInterval: 2000, // Poll every 2 seconds
+      refreshInterval: 2000,
     }
   )
+
+  const { data: config, mutate: mutateConfig } = useSWR<ResponseConfig>(
+    `/api/config/${slug}`,
+    fetcher
+  )
+
+  // Sync local state when config is fetched
+  useEffect(() => {
+    if (config) {
+      setLocalConfig(config)
+    }
+  }, [config])
+
+  const saveConfig = async () => {
+    setIsSavingConfig(true)
+    try {
+      await fetch(`/api/config/${slug}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(localConfig)
+      })
+      mutateConfig()
+      alert('Response configuration saved!')
+    } catch (e) {
+      alert('Failed to save configuration')
+    } finally {
+      setIsSavingConfig(false)
+    }
+  }
+
+  const curlCommand = String.raw`curl -X POST https://${host}/record/${slug} \
+  -H "Content-Type: application/json" \
+  -d '{"test": "data", "source": "callback-handler"}'`
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(curlCommand)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <Page>
@@ -128,21 +187,93 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       </Head>
 
       <section className="flex flex-col gap-6">
-        <Link href="/" className="mb-4 text-sm text-gray-500 hover:text-black transition-colors inline-flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="16"></line>
-            <line x1="8" y1="12" x2="16" y2="12"></line>
-          </svg>
-          Create New
-        </Link>
-        <div className="flex">
-          <img src="/logo.png" alt="Callback Handler Logo" className="w-12 h-12" />
+        <div className="flex justify-between items-center">
+          <Link href="/" className="text-sm text-gray-500 hover:text-black transition-colors inline-flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            Create New
+          </Link>
+          <img src="/logo.png" alt="Callback Handler Logo" className="w-10 h-10" />
         </div>
-        <Text variant="h1">Requests for: {slug}</Text>
-        <Text>
-          Send POST requests to <Code>https://{host}/record/{slug}</Code> to see them show up here.
-        </Text>
+
+        <div>
+          <Text variant="h1">Requests for: {slug}</Text>
+          <Text className="mt-2">
+            Send requests to <Code>https://{host}/record/{slug}</Code> to see them show up here.
+          </Text>
+        </div>
+
+        <div className="bg-gray-50 p-4 border rounded-lg shadow-sm">
+          <div className="flex justify-between items-center mb-2">
+            <Text className="text-sm font-semibold text-gray-700">Test with CURL</Text>
+            <button
+              onClick={copyToClipboard}
+              className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              {copied ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="green" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  Copy Command
+                </>
+              )}
+            </button>
+          </div>
+          <pre className="text-xs bg-gray-900 text-gray-100 p-3 rounded overflow-x-auto font-mono leading-relaxed">
+            {curlCommand}
+          </pre>
+        </div>
+
+        <div className="p-6 border rounded-lg shadow-sm bg-white">
+          <Text variant="h2" className="mb-4">Response Configuration</Text>
+          <Text className="text-sm text-gray-500 mb-4">
+            Customize what this endpoint returns when it receives a request.
+          </Text>
+          
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="status-code" className="text-xs font-bold uppercase text-gray-500">Status Code</label>
+              <input
+                id="status-code"
+                type="number"
+                value={localConfig.status}
+                onChange={(e) => setLocalConfig({ ...localConfig, status: Number.parseInt(e.target.value) })}
+                className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none w-32"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-1">
+              <label htmlFor="response-body" className="text-xs font-bold uppercase text-gray-500">Response Body (JSON or Text)</label>
+              <textarea
+                id="response-body"
+                value={localConfig.body}
+                onChange={(e) => setLocalConfig({ ...localConfig, body: e.target.value })}
+                rows={4}
+                className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none font-mono"
+              />
+            </div>
+            
+            <button
+              onClick={saveConfig}
+              disabled={isSavingConfig}
+              className={`px-4 py-2 rounded text-white font-medium self-start transition-colors ${isSavingConfig ? 'bg-gray-400' : 'bg-black hover:bg-gray-800'}`}
+            >
+              {isSavingConfig ? 'Saving...' : 'Save Configuration'}
+            </button>
+          </div>
+        </div>
       </section>
 
       <section className="flex flex-col gap-4 mt-8">
