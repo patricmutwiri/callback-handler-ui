@@ -1,4 +1,4 @@
-import { Code, Layout, Link, Page, Text } from '@vercel/examples-ui'
+import { Code, Link, Page, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
@@ -167,5 +167,3 @@ export default function RecordPage({ slug, requests = [], host }: Props) {
     </Page>
   )
 }
-
-RecordPage.Layout = Layout

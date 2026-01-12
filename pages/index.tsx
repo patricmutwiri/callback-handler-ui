@@ -1,4 +1,4 @@
-import { Code, Layout, Page, Text } from '@vercel/examples-ui'
+import { Code, Page, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
@@ -83,5 +83,3 @@ export default function Home() {
     </Page>
   )
 }
-
-Home.Layout = Layout
