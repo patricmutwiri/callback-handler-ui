@@ -31,7 +31,7 @@ export default function Home() {
         <meta name="description" content="Record and inspect HTTP requests" />
       </Head>
       
-      <section className="flex flex-col gap-6 mx-auto mt-12 text-center w-full">
+      <section className="flex flex-col gap-6 mx-auto mt-12 text-center max-w-[50vw]">
         <div className="flex justify-center">
           <img src="/logo.png" alt="Callback Handler Logo" className="w-20 h-20" />
         </div>

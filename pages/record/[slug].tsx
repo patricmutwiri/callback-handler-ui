@@ -41,11 +41,23 @@ async function getBody(req: any) {
 export const getServerSideProps: GetServerSideProps = async ({ req, res, query }) => {
   const slug = query.slug as string
   const key = `requests:${slug}`
+  const activeKey = `active:${slug}`
 
   // Detect if this is a browser UI request or Next.js data request
   const isBrowserRequest = (req.method === 'GET' && req.headers.accept?.includes('text/html')) || req.headers['x-nextjs-data']
 
+  // Check if slug is active
+  const isActive = await kv.get(activeKey)
+
   if (!isBrowserRequest) {
+    if (!isActive) {
+      res.statusCode = 404
+      res.setHeader('Content-Type', 'application/json')
+      res.write(JSON.stringify({ error: 'URL not found. Visit the UI to initialize it.' }))
+      res.end()
+      return { props: {} }
+    }
+
     try {
       // For GET/DELETE/etc requests, body might be empty or not applicable, but we try to read it if present.
       // Note: Next.js API routes consume body for POST/PUT automatically if body parser enabled, 
@@ -94,6 +106,11 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
 
   // UI request (GET + Accept: text/html) - fetch data for UI
   try {
+    // Initialize slug if not already active
+    if (!isActive) {
+      await kv.set(activeKey, true)
+    }
+
     const rawRequests = await kv.lrange(key, 0, 49) || []
     const requests = rawRequests.map((req) => {
       try {
