@@ -6,6 +6,8 @@ import { getLayout } from '@vercel/examples-ui'
 import '@vercel/examples-ui/globals.css'
 import Head from 'next/head'
 
+import PaypalButton from '@/components/PaypalButton'
+
 function App({ Component, pageProps }: AppProps) {
   const Layout = getLayout<LayoutProps>(Component)
 
@@ -23,6 +25,7 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
       <Component {...pageProps} />
       <Analytics />
+      <PaypalButton />
     </Layout>
   )
 }
