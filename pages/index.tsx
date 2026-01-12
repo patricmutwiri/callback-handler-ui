@@ -30,8 +30,19 @@ export default function Home() {
         <title>Callback Handler</title>
         <meta name="description" content="Record and inspect HTTP requests" />
       </Head>
+
+      {/* Background Graphic */}
+      <div 
+        className="fixed inset-0 z-[-1]"
+        style={{ 
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.8)), url(/graffiti-bg.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        }}
+      />
       
-      <section className="flex flex-col gap-6 mx-auto mt-12 text-center max-w-[50vw]">
+      <section className="flex flex-col gap-6 mx-auto mt-12 text-center max-w-[50vw] relative">
         <div className="flex justify-center">
           <img src="/logo.png" alt="Callback Handler Logo" className="w-20 h-20" />
         </div>
