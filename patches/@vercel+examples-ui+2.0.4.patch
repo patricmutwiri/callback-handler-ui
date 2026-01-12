@@ -1,0 +1,48 @@
+diff --git a/node_modules/@vercel/examples-ui/dist/index.d.ts b/node_modules/@vercel/examples-ui/dist/index.d.ts
+index af8355c..7abb27c 100644
+--- a/node_modules/@vercel/examples-ui/dist/index.d.ts
++++ b/node_modules/@vercel/examples-ui/dist/index.d.ts
+@@ -1,14 +1,14 @@
+-export * from './layout.js';
++export * from './button.js';
++export * from './code.js';
+ export * from './head.js';
+-export * from './text.js';
+ export * from './input.js';
+-export * from './button.js';
+-export * from './loading-dots.js';
+-export * from './page.js';
++export * from './layout.js';
+ export * from './link.js';
+-export * from './code.js';
+ export * from './list.js';
++export * from './loading-dots.js';
++export * from './page.js';
+ export * from './snippet.js';
++export * from './text.js';
+ export declare const getMetadata: ({ title, description, }?: {
+     title?: string | undefined;
+     description?: string | undefined;
+diff --git a/node_modules/@vercel/examples-ui/dist/layout.d.ts b/node_modules/@vercel/examples-ui/dist/layout.d.ts
+index 780a4c0..8e1b261 100644
+--- a/node_modules/@vercel/examples-ui/dist/layout.d.ts
++++ b/node_modules/@vercel/examples-ui/dist/layout.d.ts
+@@ -1,4 +1,4 @@
+-import type { ReactNode, ComponentType } from 'react';
++import type { ComponentType, ReactNode } from 'react';
+ import { type NavProps } from './nav.js';
+ export interface LayoutProps extends NavProps {
+     children?: ReactNode;
+diff --git a/node_modules/@vercel/examples-ui/dist/link.js b/node_modules/@vercel/examples-ui/dist/link.js
+index 3896a08..bc69423 100644
+--- a/node_modules/@vercel/examples-ui/dist/link.js
++++ b/node_modules/@vercel/examples-ui/dist/link.js
+@@ -1,7 +1,7 @@
+ import { _ as _extends } from "@swc/helpers/_/_extends";
+ import { _ as _object_without_properties_loose } from "@swc/helpers/_/_object_without_properties_loose";
+ import { jsx as _jsx } from "react/jsx-runtime";
+-import NextLink from 'next/link';
++import NextLink from 'next/link.js';
+ import clsx from 'clsx';
+ export const Link = (_param)=>{
+     var { children, className, href, component, secondary } = _param, props = _object_without_properties_loose(_param, [
