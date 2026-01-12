@@ -36,8 +36,14 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
   const slug = query.slug as string
   const key = `requests:${slug}`
 
-  if (req.method === 'POST') {
+  // Detect if this is a browser UI request
+  const isBrowserRequest = req.method === 'GET' && req.headers.accept?.includes('text/html')
+
+  if (!isBrowserRequest) {
     try {
+      // For GET/DELETE/etc requests, body might be empty or not applicable, but we try to read it if present.
+      // Note: Next.js API routes consume body for POST/PUT automatically if body parser enabled, 
+      // but getServerSideProps receives raw IncomingMessage.
       const body = await getBody(req)
       const timestamp = new Date().toISOString()
       const forwarded = req.headers['x-forwarded-for']
@@ -48,8 +54,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         timestamp,
         method: req.method,
         headers: req.headers,
-        body,
-        query: req.query,
+        body: body || null,
+        query: query,
         ip,
       }
 
@@ -72,7 +78,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
     }
   }
 
-  // GET request - fetch data for UI
+  // UI request (GET + Accept: text/html) - fetch data for UI
   try {
     const requests = await kv.lrange(key, 0, 49)
     return {
