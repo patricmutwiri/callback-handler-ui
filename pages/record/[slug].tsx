@@ -2,6 +2,7 @@ import { Code, Link, Page, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
+import useSWR from 'swr'
 
 interface RequestData {
   id: string
@@ -18,6 +19,8 @@ interface Props {
   requests: RequestData[]
   host: string
 }
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 async function getBody(req: any) {
   const buffers = []
@@ -108,7 +111,16 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
   }
 }
 
-export default function RecordPage({ slug, requests = [], host }: Props) {
+export default function RecordPage({ slug, requests: initialRequests = [], host }: Props) {
+  const { data: requests = initialRequests } = useSWR<RequestData[]>(
+    `/api/record/${slug}`,
+    fetcher,
+    {
+      fallbackData: initialRequests,
+      refreshInterval: 2000, // Poll every 2 seconds
+    }
+  )
+
   return (
     <Page>
       <Head>
