@@ -3,8 +3,8 @@
   "ignoreCommand": "pnpm dlx turbo-ignore",
   "crons": [
     {
-      "path": "/api/cron/12h",
-      "schedule": "0 */12 * * *"
+      "path": "/api/cron/1d",
+      "schedule": "0 0 * * *"
     }
   ]
 }
