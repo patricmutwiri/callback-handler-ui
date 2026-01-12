@@ -1,4 +1,4 @@
-# Callback Handler (UI)
+# <img src="public/logo.png" width="128" /> Callback Handler (UI)
 
 A lightweight tool to generate unique URLs for capturing, inspecting, and debugging HTTP requests (webhooks, callbacks, etc.) in real-time. Built with Next.js and Vercel KV.
 

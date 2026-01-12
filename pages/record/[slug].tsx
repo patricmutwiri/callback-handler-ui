@@ -116,6 +116,9 @@ export default function RecordPage({ slug, requests = [], host }: Props) {
       </Head>
       
       <section className="flex flex-col gap-6">
+        <div className="flex">
+          <img src="/logo.png" alt="Callback Handler Logo" className="w-12 h-12" />
+        </div>
         <Text variant="h1">Requests for: {slug}</Text>
         <Text>
           Send POST requests to <Code>https://{host}/record/{slug}</Code> to see them show up here.
