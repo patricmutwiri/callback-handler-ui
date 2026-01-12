@@ -105,3 +105,5 @@ Deploy easily with Vercel:
 ## Outro
 
 Made with ❤️ for us by us. Happy Coding!
+
+While you're here, you can buy me a coffee via [PayPal](https://www.paypal.com/ncp/payment/G54BFVLVSBVKS) - #ubuntu!
