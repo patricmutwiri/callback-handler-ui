@@ -1,107 +1,75 @@
-import Post from '@/components/post'
-import { Code, Layout, Link, Page, Text } from '@vercel/examples-ui'
+import { Code, Layout, Page, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
+import { useState } from 'react'
 
-const intervals = [
-  {
-    id: '1m',
-    name: 'Every Minute',
-    cron: '* * * * *',
-  },
-  {
-    id: '10m',
-    name: 'Every 10 mins',
-    cron: '*/10 * * * *',
-  },
-  {
-    id: '1h',
-    name: 'Every Hour',
-    cron: '0 * * * *',
-  },
-  {
-    id: '12h',
-    name: 'Every 12 hours',
-    cron: '0 */12 * * *',
-  },
-  {
-    id: '1d',
-    name: 'Every Day',
-    cron: '0 0 * * *',
-  },
-  {
-    id: '1w',
-    name: 'Every Week',
-    cron: '0 0 * * 0',
-  },
-  {
-    id: '1mo',
-    name: 'Every Month',
-    cron: '0 0 1 * *',
-  },
-]
+export default function Home() {
+  const router = useRouter()
+  const [slug, setSlug] = useState('')
 
-const image = 'https://cron-template.vercel.app/thumbnail.png'
+  const generateSlug = () => {
+    const randomSlug = Math.random().toString(36).substring(7)
+    setSlug(randomSlug)
+  }
 
-export default function Home({ data }: { data: any }) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (slug.trim()) {
+      router.push(`/record/${slug.trim()}`)
+    }
+  }
+
   return (
     <Page>
       <Head>
-        <meta property="og:image" content={image} />
-        <meta name="twitter:image" content={image} />
+        <title>Callback Handler</title>
+        <meta name="description" content="Record and inspect HTTP requests" />
       </Head>
-      <section className="flex flex-col gap-6">
-        <Text variant="h1">Vercel Cron Jobs Example</Text>
+      
+      <section className="flex flex-col gap-6 max-w-2xl mx-auto mt-12 text-center">
+        <Text variant="h1">Callback Handler</Text>
         <Text>
-          This example shows you how you can use{' '}
-          <Link
-            href="https://vercel.com/docs/cron-jobs"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            Vercel Cron Jobs
-          </Link>{' '}
-          to update data at different intervals.
+          Generate a unique URL to capture HTTP requests and callbacks. 
+          Inspect headers, body, and more in real-time.
         </Text>
-        <Text>
-          Each of the following sections are the{' '}
-          <Link
-            href="https://github.com/HackerNews/API#new-top-and-best-stories"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            newest stories on Hacker News
-          </Link>{' '}
-          retrieved at different intervals using{' '}
-          <Link
-            href="https://vercel.com/docs/cron-jobs"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            Vercel Cron Jobs
-          </Link>{' '}
-          and stored in{' '}
-          <Link
-            href="https://vercel.com/kv"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            Vercel KV
-          </Link>
-          .
-        </Text>
-      </section>
-      <section className="grid gap-6 mt-10 pt-10 border-t border-gray-300">
-        <div className="flex flex-col gap-12">
-          {intervals.map((interval) => (
-            <div key={interval.id} className="flex flex-col gap-6">
-              <div className="flex justify-between items-center">
-                <Text variant="h2">{interval.name}</Text>
-                <Code>{interval.cron}</Code>
-              </div>
-              <Post interval={interval.id} />
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-8 p-6 border rounded-lg shadow-sm bg-white">
+          <Text variant="h2">Get Started</Text>
+          <div className="flex flex-col gap-2 text-left">
+            <label htmlFor="slug" className="text-sm font-medium text-gray-700">
+              Choose a Slug
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="slug"
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="e.g. my-webhook"
+                className="flex-1 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none"
+                required
+              />
+              <button
+                type="button"
+                onClick={generateSlug}
+                className="px-4 py-2 text-sm border rounded hover:bg-gray-50 bg-white"
+              >
+                Random
+              </button>
             </div>
-          ))}
-        </div>
+            {slug && (
+              <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-500 break-all">
+                Your endpoint: <Code>https://{typeof window !== 'undefined' ? window.location.host : '...'}/record/{slug}</Code>
+              </div>
+            )}
+          </div>
+          <button
+            type="submit"
+            className="w-full py-2 px-4 bg-black text-white rounded font-medium hover:bg-gray-800 transition-colors"
+          >
+            Start Recording
+          </button>
+        </form>
       </section>
     </Page>
   )

@@ -36,8 +36,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
   const slug = query.slug as string
   const key = `requests:${slug}`
 
-  // Detect if this is a browser UI request
-  const isBrowserRequest = req.method === 'GET' && req.headers.accept?.includes('text/html')
+  // Detect if this is a browser UI request or Next.js data request
+  const isBrowserRequest = (req.method === 'GET' && req.headers.accept?.includes('text/html')) || req.headers['x-nextjs-data']
 
   if (!isBrowserRequest) {
     try {
@@ -80,7 +80,15 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
 
   // UI request (GET + Accept: text/html) - fetch data for UI
   try {
-    const requests = await kv.lrange(key, 0, 49)
+    const rawRequests = await kv.lrange(key, 0, 49) || []
+    const requests = rawRequests.map((req) => {
+      try {
+        return typeof req === 'string' ? JSON.parse(req) : req
+      } catch (e) {
+        return null
+      }
+    }).filter(Boolean) as RequestData[]
+
     return {
       props: {
         slug,
@@ -100,7 +108,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
   }
 }
 
-export default function RecordPage({ slug, requests, host }: Props) {
+export default function RecordPage({ slug, requests = [], host }: Props) {
   return (
     <Page>
       <Head>

@@ -18,7 +18,7 @@ function App({ Component, pageProps }: AppProps) {
       path="solutions/cron"
     >
       <Head>
-        <title>Vercel Cron Job Example</title>
+        <title>Callback Handler</title>
         <meta name="description" content="How to use Vercel Cron Jobs to update data at different intervals" />
       </Head>
       <Component {...pageProps} />
