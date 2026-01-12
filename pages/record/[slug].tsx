@@ -1,4 +1,4 @@
-import { Code, Layout, Page, Text } from '@vercel/examples-ui'
+import { Code, Layout, Link, Page, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
@@ -114,8 +114,11 @@ export default function RecordPage({ slug, requests = [], host }: Props) {
       <Head>
         <title>Recorded Requests: {slug}</title>
       </Head>
-      
+
       <section className="flex flex-col gap-6">
+        <Link href="/" className="mb-4 text-sm text-gray-500 hover:text-black transition-colors inline-flex items-center gap-1">
+          ← Create New
+        </Link>
         <div className="flex">
           <img src="/logo.png" alt="Callback Handler Logo" className="w-12 h-12" />
         </div>
