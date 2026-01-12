@@ -22,6 +22,7 @@ function App({ Component, pageProps }: AppProps) {
       <Head>
         <title>Callback Handler</title>
         <meta name="description" content="How to use Vercel Cron Jobs to update data at different intervals" />
+        <link rel="icon" href="/favicon.png" />
       </Head>
       <Component {...pageProps} />
       <Analytics />
