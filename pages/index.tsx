@@ -6,15 +6,20 @@ import { useState } from 'react'
 export default function Home() {
   const router = useRouter()
   const [slug, setSlug] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const generateSlug = () => {
+    const d = new Date()
+    const month = (d.getMonth() + 1).toString().padStart(2, '0')
+    const day = d.getDate().toString().padStart(2, '0')
     const randomSlug = Math.random().toString(36).substring(7)
-    setSlug(randomSlug)
+    setSlug(`${randomSlug}-${month}${day}`)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (slug.trim()) {
+      setLoading(true)
       router.push(`/record/${slug.trim()}`)
     }
   }
@@ -65,9 +70,10 @@ export default function Home() {
           </div>
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-black text-white rounded font-medium hover:bg-gray-800 transition-colors"
+            disabled={loading}
+            className={`w-full py-2 px-4 text-white rounded font-medium transition-colors ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'}`}
           >
-            Start Recording
+            {loading ? 'Redirecting...' : 'Start Recording'}
           </button>
         </form>
       </section>
