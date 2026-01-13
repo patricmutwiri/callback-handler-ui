@@ -59,11 +59,10 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
     }
 
     try {
-      // For GET/DELETE/etc requests, body might be empty or not applicable, but we try to read it if present.
-      // Note: Next.js API routes consume body for POST/PUT automatically if body parser enabled, 
-      // but getServerSideProps receives raw IncomingMessage.
       const body = await getBody(req)
-      const timestamp = new Date().toISOString()
+      const timestamp = new Date()
+      const timestampIso = timestamp.toISOString()
+      const today = timestampIso.split('T')[0]
       const forwarded = req.headers['x-forwarded-for']
       const ip = typeof forwarded === 'string' ? forwarded.split(/, /)[0] : req.socket.remoteAddress
 
@@ -74,7 +73,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
 
       const requestData: RequestData = {
         id: crypto.randomUUID(),
-        timestamp,
+        timestamp: timestampIso,
         method: req.method || 'UNKNOWN',
         headers: req.headers,
         body: body || null,
@@ -84,10 +83,24 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         responseBody: config.body
       }
 
+      // 1 month TTL in seconds (30 days)
+      const TTL = 30 * 24 * 60 * 60
+
       // Store in Redis List
       await kv.lpush(key, JSON.stringify(requestData))
       // Keep only last 100 requests
       await kv.ltrim(key, 0, 99)
+      
+      // Set TTL on all relevant keys
+      await Promise.all([
+        kv.expire(key, TTL),
+        kv.expire(activeKey, TTL),
+        kv.expire(configKey, TTL),
+        // Update stats
+        kv.sadd('all_slugs', slug),
+        kv.incr(`stats:total:${today}`),
+        kv.incr(`stats:slug:${slug}:${today}`)
+      ])
 
       res.statusCode = config.status
       res.setHeader('Content-Type', 'application/json')
