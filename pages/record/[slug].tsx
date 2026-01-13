@@ -297,7 +297,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     const contentType = localConfig.contentType || 'application/json'
     
     if (isXml) {
-      return String.raw`curl -X POST https://${host}/record/${slug} \
+      return String.raw`curl -v -X POST https://${host}/record/${slug} \
   -H "Content-Type: ${contentType}" \
   -d '<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
@@ -308,7 +308,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
 </soapenv:Envelope>'`
     }
 
-    return String.raw`curl -X POST https://${host}/record/${slug} \
+    return String.raw`curl -v -X POST https://${host}/record/${slug} \
   -H "Content-Type: application/json" \
   -d '{"test": "data", "source": "callback-handler"}'`
   }, [host, slug, localConfig.contentType])
