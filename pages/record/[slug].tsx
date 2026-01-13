@@ -2,6 +2,8 @@ import { Code, Link, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
+import PusherServer from 'pusher'
+import Pusher from 'pusher-js'
 import { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
 
@@ -105,6 +107,23 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         kv.incr(`stats:total:${today}`),
         kv.incr(`stats:slug:${slug}:${today}`)
       ])
+
+      // Trigger Pusher event for real-time update
+      try {
+        const promoter = new PusherServer({
+          appId: process.env.PUSHER_APP_ID!,
+          key: process.env.PUSHER_KEY!,
+          secret: process.env.PUSHER_SECRET!,
+          cluster: process.env.PUSHER_CLUSTER!,
+          useTLS: true
+        })
+
+        await promoter.trigger(`slug-${slug}`, 'new-request', {
+          id: requestData.id
+        })
+      } catch (e) {
+        console.error('Pusher trigger failed:', e)
+      }
 
       res.statusCode = config.status
       res.setHeader('Content-Type', config.contentType || 'application/json')
@@ -246,14 +265,33 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     setValidationError(validateBody(localConfig.contentType, newBody))
   }
 
-  const { data: requests = initialRequests } = useSWR<RequestData[]>(
+  const { data: requests = initialRequests, mutate: mutateRequests } = useSWR<RequestData[]>(
     `/api/record/${slug}`,
     fetcher,
     {
       fallbackData: initialRequests,
-      refreshInterval: 2000,
+      refreshInterval: 30000,
     }
   )
+
+  // Real-time updates via Pusher
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_PUSHER_KEY) return
+
+    const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'mt1'
+    })
+
+    const channel = pusherClient.subscribe(`slug-${slug}`)
+    channel.bind('new-request', () => {
+      mutateRequests()
+    })
+
+    return () => {
+      pusherClient.unsubscribe(`slug-${slug}`)
+      pusherClient.disconnect()
+    }
+  }, [slug, mutateRequests])
 
   const { data: config, mutate: mutateConfig } = useSWR<ResponseConfig>(
     `/api/config/${slug}`,
