@@ -361,91 +361,98 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
           </Text>
         </div>
 
-        <div className="bg-gray-50 p-4 border rounded-lg shadow-sm">
-          <div className="flex justify-between items-center mb-2">
-            <Text className="text-sm font-semibold text-gray-700">Test with CURL</Text>
-            <button
-              onClick={copyToClipboard}
-              className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
-            >
-              {copied ? (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="green" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                  Copy Command
-                </>
-              )}
-            </button>
-          </div>
-          <pre className="text-xs bg-gray-900 text-gray-100 p-3 rounded overflow-x-auto font-mono leading-relaxed">
-            {curlCommand}
-          </pre>
-        </div>
-
-        <div className="p-6 border rounded-lg shadow-sm bg-white">
-          <Text variant="h2" className="mb-4">Response Configuration</Text>
-          <Text className="text-sm text-gray-500 mb-4">
-            Customize what this endpoint returns when it receives a request.
-          </Text>
-          
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="status-code" className="text-xs font-bold uppercase text-gray-500">Status Code</label>
-              <input
-                id="status-code"
-                type="number"
-                value={localConfig.status}
-                onChange={(e) => setLocalConfig({ ...localConfig, status: Number.parseInt(e.target.value) })}
-                className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none w-32"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label htmlFor="content-type" className="text-xs font-bold uppercase text-gray-500">Content Type</label>
-              <select
-                id="content-type"
-                value={localConfig.contentType}
-                onChange={(e) => onContentTypeChange(e.target.value)}
-                className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none w-64"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* CURL Section */}
+          <div className="bg-gray-50 p-6 border rounded-lg shadow-sm h-full flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <Text className="text-sm font-semibold text-gray-700">Test with CURL</Text>
+              <button
+                onClick={copyToClipboard}
+                className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
-                <option value="application/json">application/json</option>
-                <option value="application/xml">application/xml</option>
-                <option value="application/soap+xml">application/soap+xml</option>
-                <option value="text/plain">text/plain</option>
-                <option value="text/html">text/html</option>
-              </select>
+                {copied ? (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="green" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy Command
+                  </>
+                )}
+              </button>
             </div>
+            <pre className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono leading-relaxed flex-grow min-h-[140px]">
+              {curlCommand}
+            </pre>
+            <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy and run in terminal to test</Text>
+          </div>
+
+          {/* Configuration Section */}
+          <div className="p-6 border rounded-lg shadow-sm bg-white h-full">
+            <Text variant="h2" className="mb-4">Response Configuration</Text>
+            <Text className="text-sm text-gray-500 mb-6 border-b pb-4">
+              Customize what this endpoint returns.
+            </Text>
             
-            <div className="flex flex-col gap-1">
-              <label htmlFor="response-body" className="text-xs font-bold uppercase text-gray-500">Response Body (JSON or Text)</label>
-              <textarea
-                id="response-body"
-                value={localConfig.body}
-                onChange={(e) => onBodyChange(e.target.value)}
-                rows={8}
-                className={`border rounded px-3 py-2 text-sm focus:ring-2 focus:outline-none font-mono ${validationError ? 'border-red-500 focus:ring-red-200' : 'focus:ring-black'}`}
-              />
-              {validationError && (
-                <span className="text-xs text-red-500 font-medium">{validationError}</span>
-              )}
+            <div className="flex flex-col gap-6">
+              <div className="flex gap-4">
+                <div className="flex flex-col gap-1 flex-1">
+                  <label htmlFor="status-code" className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Status Code</label>
+                  <input
+                    id="status-code"
+                    type="number"
+                    value={localConfig.status}
+                    onChange={(e) => setLocalConfig({ ...localConfig, status: Number.parseInt(e.target.value) })}
+                    className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none w-full"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 flex-[2]">
+                  <label htmlFor="content-type" className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Content Type</label>
+                  <select
+                    id="content-type"
+                    value={localConfig.contentType}
+                    onChange={(e) => onContentTypeChange(e.target.value)}
+                    className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none w-full bg-transparent"
+                  >
+                    <option value="application/json">application/json</option>
+                    <option value="application/xml">application/xml</option>
+                    <option value="application/soap+xml">application/soap+xml</option>
+                    <option value="text/plain">text/plain</option>
+                    <option value="text/html">text/html</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-1">
+                <label htmlFor="response-body" className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Response Body</label>
+                <textarea
+                  id="response-body"
+                  value={localConfig.body}
+                  onChange={(e) => onBodyChange(e.target.value)}
+                  rows={8}
+                  className={`border border-gray-200 rounded p-3 text-xs focus:ring-1 focus:outline-none font-mono ${validationError ? 'border-red-500 focus:ring-red-200' : 'focus:ring-black'}`}
+                />
+                {validationError && (
+                  <span className="text-[10px] text-red-500 font-medium mt-1 uppercase">{validationError}</span>
+                )}
+              </div>
+              
+              <button
+                onClick={saveConfig}
+                disabled={isSavingConfig || !!validationError}
+                className={`px-4 py-2 rounded text-xs uppercase tracking-widest font-bold self-end transition-all ${isSavingConfig || !!validationError ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800 hover:shadow-lg active:scale-95'}`}
+              >
+                {isSavingConfig ? 'Saving...' : 'Save Configuration'}
+              </button>
             </div>
-            
-            <button
-              onClick={saveConfig}
-              disabled={isSavingConfig || !!validationError}
-              className={`px-4 py-2 rounded text-white font-medium self-start transition-colors ${isSavingConfig || !!validationError ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'}`}
-            >
-              {isSavingConfig ? 'Saving...' : 'Save Configuration'}
-            </button>
           </div>
         </div>
       </section>
