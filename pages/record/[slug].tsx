@@ -193,6 +193,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   const [isTesting, setIsTesting] = useState(false)
   const [testResponse, setTestResponse] = useState<{ status: number; data: any; headers: Record<string, string> } | null>(null)
   const [testError, setTestError] = useState<string | null>(null)
+  const [protocol, setProtocol] = useState<string>('https:') // Default to https: for SSR
   const [methodFilter, setMethodFilter] = useState<string>('ALL')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [dateFilter, setDateFilter] = useState<string>('') // yyyy-mm-dd
@@ -330,6 +331,13 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     setCurrentPage(1)
   }, [methodFilter, statusFilter, dateFilter, safePageSize])
 
+  // Set protocol on client side to avoid hydration mismatch
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setProtocol(window.location.protocol)
+    }
+  }, [])
+
   const handlePageSizeChange = (value: string) => {
     const n = Number.parseInt(value, 10)
     if (Number.isNaN(n) || n <= 0) {
@@ -398,9 +406,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   const curlCommand = useMemo(() => {
     const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
     const contentType = localConfig.contentType || 'application/json'
+    const baseUrl = `${protocol}//${host}/record/${slug}`
     
     if (isXml) {
-      return String.raw`curl -v -X POST https://${host}/record/${slug} \
+      return String.raw`curl -v -X POST ${baseUrl} \
   -H "Content-Type: ${contentType}" \
   -d '<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
@@ -411,15 +420,15 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
 </soapenv:Envelope>'`
     }
 
-    return String.raw`curl -v -X POST https://${host}/record/${slug} \
+    return String.raw`curl -v -X POST ${baseUrl} \
   -H "Content-Type: application/json" \
   -d '{"test": "data", "source": "callback-handler"}'`
-  }, [host, slug, localConfig.contentType])
+  }, [host, slug, localConfig.contentType, protocol])
 
   const browserConsoleCode = useMemo(() => {
     const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
     const contentType = localConfig.contentType || 'application/json'
-    const url = `https://${host}/record/${slug}`
+    const url = `${protocol}//${host}/record/${slug}`
     
     if (isXml) {
       return `fetch('${url}', {
@@ -453,7 +462,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   .then(response => response.json())
   .then(data => console.log('Response:', data))
   .catch(error => console.error('Error:', error));`
-  }, [host, slug, localConfig.contentType])
+  }, [host, slug, localConfig.contentType, protocol])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(curlCommand)
@@ -475,7 +484,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     try {
       const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
       const contentType = localConfig.contentType || 'application/json'
-      const url = `https://${host}/record/${slug}`
+      const url = `${protocol}//${host}/record/${slug}`
 
       let body: string
       if (isXml) {
