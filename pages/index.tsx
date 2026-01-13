@@ -2,6 +2,7 @@ import { Code, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
+import AuthSection from '@/components/AuthSection'
 
 export default function Home() {
   const router = useRouter()
@@ -47,14 +48,22 @@ export default function Home() {
         }}
       />
       
-      <section className="flex flex-col gap-6 mx-auto mt-12 text-center max-w-[50vw] relative">
+      <section className="flex flex-col gap-6 mx-auto mt-12 text-center max-w-[90vw] relative">
         <Text variant="h1">Callback Handler</Text>
         <Text>
           Generate a unique URL to capture HTTP requests and callbacks. 
           Inspect headers, body, and more in real-time.
         </Text>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-8 p-6 border rounded-lg shadow-sm bg-white">
+        {/* Side by side layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          {/* Authentication Section */}
+          <div className="flex-shrink-0">
+            <AuthSection />
+          </div>
+
+          {/* Get Started Form */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 border rounded-lg shadow-sm bg-white/80 backdrop-blur-sm">
           <Text variant="h2">Get Started</Text>
           <div className="flex flex-col gap-2 text-left">
             <label htmlFor="slug" className="text-sm font-medium text-gray-700">
@@ -101,6 +110,7 @@ export default function Home() {
             {loading ? 'Redirecting...' : 'Start Recording'}
           </button>
         </form>
+        </div>
       </section>
     </>
   )
