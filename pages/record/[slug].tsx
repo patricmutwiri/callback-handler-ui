@@ -559,7 +559,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                 placeholder="e.g. 200"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none min-w-[120px]"
+                className="bg-transparent border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none min-w-[120px]"
               />
             </div>
 
@@ -569,7 +569,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                 type="date"
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none"
+                className="bg-transparent border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none"
               />
             </div>
 
@@ -580,7 +580,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                 min={1}
                 value={safePageSize}
                 onChange={(e) => handlePageSizeChange(e.target.value)}
-                className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none w-24"
+                className="bg-transparent border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none w-24"
               />
             </div>
 
