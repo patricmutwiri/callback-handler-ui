@@ -40,6 +40,35 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Footer */}
       <PaypalButton />
+      
+      {/* Footer Links */}
+      <footer className="border-t border-gray-200 bg-white py-4">
+        <div className="max-w-[90vw] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm text-gray-600">
+            <Link href="/privacy" className="hover:text-black transition-colors">
+              Privacy Policy
+            </Link>
+            <span className="hidden sm:inline">•</span>
+            <a
+              href="https://github.com/patricmutwiri/callback-handler-ui"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-black transition-colors"
+            >
+              GitHub Repository
+            </a>
+            <span className="hidden sm:inline">•</span>
+            <a
+              href="https://github.com/patricmutwiri"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-black transition-colors"
+            >
+              Works by Patrick Mutwiri
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
