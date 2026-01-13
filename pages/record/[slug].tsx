@@ -166,12 +166,84 @@ interface ResponseConfig {
 export default function RecordPage({ slug, requests: initialRequests = [], host }: Props) {
   const [copied, setCopied] = useState(false)
   const [isSavingConfig, setIsSavingConfig] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const [localConfig, setLocalConfig] = useState<ResponseConfig>({
     status: 200,
     body: '{"success": true}',
     contentType: 'application/json'
   })
   
+  const validateBody = (contentType: string, body: string): string | null => {
+    if (!body) return null
+    
+    if (contentType === 'application/json') {
+      try {
+        JSON.parse(body)
+        return null
+      } catch (e: any) {
+        return `Invalid JSON: ${e.message}`
+      }
+    }
+    
+    if (contentType === 'application/xml' || contentType === 'application/soap+xml') {
+      try {
+        const parser = new DOMParser()
+        const xmlDoc = parser.parseFromString(body, "text/xml")
+        const parseError = xmlDoc.getElementsByTagName("parsererror")
+        if (parseError.length > 0) {
+          return `Invalid XML: ${parseError[0].textContent}`
+        }
+        return null
+      } catch (e: any) {
+        return `Invalid XML: ${e.message}`
+      }
+    }
+    
+    return null
+  }
+
+  const getTemplate = (contentType: string) => {
+    if (contentType === 'application/json') {
+      return JSON.stringify({
+        success: true,
+        service: "Callback Handler",
+        url: `https://${host}/record/${slug}`
+      }, null, 2)
+    }
+    if (contentType === 'application/xml' || contentType === 'application/soap+xml') {
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <web:Response>Success</web:Response>
+   </soapenv:Body>
+</soapenv:Envelope>`
+    }
+    return ""
+  }
+
+  const onContentTypeChange = (newType: string) => {
+    const error = validateBody(newType, localConfig.body)
+    setValidationError(error)
+    
+    // Automatically switch to template if body is empty or default
+    if (!localConfig.body || localConfig.body === '{"success": true}' || localConfig.body.includes('soapenv:Envelope') || localConfig.body.includes('"service": "Callback Handler"')) {
+      const template = getTemplate(newType)
+      if (template) {
+        setLocalConfig({ ...localConfig, contentType: newType, body: template })
+        setValidationError(null)
+        return
+      }
+    }
+    
+    setLocalConfig({ ...localConfig, contentType: newType })
+  }
+
+  const onBodyChange = (newBody: string) => {
+    setLocalConfig({ ...localConfig, body: newBody })
+    setValidationError(validateBody(localConfig.contentType, newBody))
+  }
+
   const { data: requests = initialRequests } = useSWR<RequestData[]>(
     `/api/record/${slug}`,
     fetcher,
@@ -194,6 +266,13 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   }, [config])
 
   const saveConfig = async () => {
+    const error = validateBody(localConfig.contentType, localConfig.body)
+    if (error) {
+      setValidationError(error)
+      alert(`Cannot save: ${error}`)
+      return
+    }
+
     setIsSavingConfig(true)
     try {
       await fetch(`/api/config/${slug}`, {
@@ -335,7 +414,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
               <select
                 id="content-type"
                 value={localConfig.contentType}
-                onChange={(e) => setLocalConfig({ ...localConfig, contentType: e.target.value })}
+                onChange={(e) => onContentTypeChange(e.target.value)}
                 className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none w-64"
               >
                 <option value="application/json">application/json</option>
@@ -351,16 +430,19 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
               <textarea
                 id="response-body"
                 value={localConfig.body}
-                onChange={(e) => setLocalConfig({ ...localConfig, body: e.target.value })}
-                rows={4}
-                className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none font-mono"
+                onChange={(e) => onBodyChange(e.target.value)}
+                rows={8}
+                className={`border rounded px-3 py-2 text-sm focus:ring-2 focus:outline-none font-mono ${validationError ? 'border-red-500 focus:ring-red-200' : 'focus:ring-black'}`}
               />
+              {validationError && (
+                <span className="text-xs text-red-500 font-medium">{validationError}</span>
+              )}
             </div>
             
             <button
               onClick={saveConfig}
-              disabled={isSavingConfig}
-              className={`px-4 py-2 rounded text-white font-medium self-start transition-colors ${isSavingConfig ? 'bg-gray-400' : 'bg-black hover:bg-gray-800'}`}
+              disabled={isSavingConfig || !!validationError}
+              className={`px-4 py-2 rounded text-white font-medium self-start transition-colors ${isSavingConfig || !!validationError ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'}`}
             >
               {isSavingConfig ? 'Saving...' : 'Save Configuration'}
             </button>
