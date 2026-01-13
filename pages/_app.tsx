@@ -6,15 +6,20 @@ import Head from 'next/head'
 
 function App({ Component, pageProps }: AppProps) {
   return (
-    <Layout>
+    <>
       <Head>
         <title>Callback Handler</title>
         <meta name="description" content="Record and inspect HTTP requests in real-time" />
+        <meta name="author" content="Patrick Mutwiri" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Callback Handler" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Component {...pageProps} />
-      <Analytics />
-    </Layout>
+      <Layout>
+        <Component {...pageProps} />
+        <Analytics />
+      </Layout>
+    </>
   )
 }
 

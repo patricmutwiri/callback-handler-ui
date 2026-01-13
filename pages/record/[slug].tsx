@@ -228,6 +228,9 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     <>
       <Head>
         <title>Recorded Requests: {slug}</title>
+        <meta property="og:title" content={`Recorded Requests for ${slug}`} />
+        <meta property="og:description" content={`Inspect HTTP requests sent to the ${slug} endpoint in real-time.`} />
+        <meta property="og:image" content={`https://${host}/logo.png`} />
       </Head>
 
       {/* Background Graphic */}

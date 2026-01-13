@@ -29,6 +29,11 @@ export default function Home() {
       <Head>
         <title>Callback Handler</title>
         <meta name="description" content="Record and inspect HTTP requests" />
+        <meta property="og:title" content="Callback Handler - Record & Inspect HTTP Requests" />
+        <meta property="og:description" content="Generate a unique URL to capture HTTP requests and callbacks. Inspect headers, body, and more in real-time." />
+        <meta property="og:image" content="https://callback-handler-ui.vercel.app/logo.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://callback-handler-ui.vercel.app/logo.png" />
       </Head>
 
       {/* Background Graphic */}
