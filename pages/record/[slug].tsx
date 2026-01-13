@@ -2,7 +2,7 @@ import { Code, Link, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
 
 interface RequestData {
@@ -108,6 +108,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
 
       res.statusCode = config.status
       res.setHeader('Content-Type', config.contentType || 'application/json')
+      res.setHeader('X-Author', 'Patrick Mutwiri')
+      res.setHeader('X-Repo-URL', 'https://github.com/patricmutwiri/callback-handler-ui')
       res.write(typeof config.body === 'string' ? config.body : JSON.stringify(config.body))
       res.end()
 
@@ -290,9 +292,26 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     }
   }
 
-  const curlCommand = String.raw`curl -X POST https://${host}/record/${slug} \
+  const curlCommand = useMemo(() => {
+    const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
+    const contentType = localConfig.contentType || 'application/json'
+    
+    if (isXml) {
+      return String.raw`curl -X POST https://${host}/record/${slug} \
+  -H "Content-Type: ${contentType}" \
+  -d '<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <web:Request>Test</web:Request>
+   </soapenv:Body>
+</soapenv:Envelope>'`
+    }
+
+    return String.raw`curl -X POST https://${host}/record/${slug} \
   -H "Content-Type: application/json" \
   -d '{"test": "data", "source": "callback-handler"}'`
+  }, [host, slug, localConfig.contentType])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(curlCommand)
