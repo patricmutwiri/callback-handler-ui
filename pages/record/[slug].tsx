@@ -188,6 +188,11 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   const [copied, setCopied] = useState(false)
   const [isSavingConfig, setIsSavingConfig] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [methodFilter, setMethodFilter] = useState<string>('ALL')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [dateFilter, setDateFilter] = useState<string>('') // yyyy-mm-dd
+  const [pageSize, setPageSize] = useState<number>(10)
+  const [currentPage, setCurrentPage] = useState<number>(1)
   const [localConfig, setLocalConfig] = useState<ResponseConfig>({
     status: 200,
     body: '{"success": true}',
@@ -274,6 +279,61 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     }
   )
 
+  // Derived + filtered data
+  const filteredRequests = useMemo(() => {
+    let result = requests || []
+
+    if (methodFilter !== 'ALL') {
+      result = result.filter((r) => r.method?.toUpperCase() === methodFilter)
+    }
+
+    if (statusFilter.trim()) {
+      const statusNum = Number.parseInt(statusFilter.trim(), 10)
+      if (!Number.isNaN(statusNum)) {
+        result = result.filter((r) => (r.responseStatus ?? 200) === statusNum)
+      }
+    }
+
+    if (dateFilter) {
+      result = result.filter((r) => {
+        if (!r.timestamp) return false
+        try {
+          const d = new Date(r.timestamp)
+          const isoDate = d.toISOString().split('T')[0]
+          return isoDate === dateFilter
+        } catch {
+          return false
+        }
+      })
+    }
+
+    return result
+  }, [requests, methodFilter, statusFilter, dateFilter])
+
+  // Pagination
+  const safePageSize = pageSize > 0 ? pageSize : 10
+  const totalPages = Math.max(1, Math.ceil((filteredRequests.length || 0) / safePageSize))
+  const currentPageClamped = Math.min(Math.max(currentPage, 1), totalPages)
+  const paginatedRequests = useMemo(() => {
+    const start = (currentPageClamped - 1) * safePageSize
+    const end = start + safePageSize
+    return filteredRequests.slice(start, end)
+  }, [filteredRequests, currentPageClamped, safePageSize])
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [methodFilter, statusFilter, dateFilter, safePageSize])
+
+  const handlePageSizeChange = (value: string) => {
+    const n = Number.parseInt(value, 10)
+    if (Number.isNaN(n) || n <= 0) {
+      setPageSize(10)
+      return
+    }
+    setPageSize(n)
+  }
+
   // Real-time updates via Pusher
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_PUSHER_KEY) return
@@ -357,6 +417,64 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const exportData = (format: 'json' | 'csv') => {
+    const data = filteredRequests
+    if (!data || data.length === 0) {
+      alert('No requests to export (check your filters).')
+      return
+    }
+
+    if (format === 'json') {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `requests-${slug}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      return
+    }
+
+    // CSV
+    const headers = ['id', 'timestamp', 'method', 'ip', 'responseStatus', 'requestBody', 'responseBody']
+    const rows = data.map((r) => {
+      const requestBody = typeof r.body === 'string' ? r.body : JSON.stringify(r.body ?? null)
+      const responseBody = typeof r.responseBody === 'string' ? r.responseBody : JSON.stringify(r.responseBody ?? null)
+
+      const csvSafe = (val: unknown) => {
+        if (val === null || val === undefined) return ''
+        const s = String(val)
+        if (s.includes('"') || s.includes(',') || s.includes('\n')) {
+          return `"${s.replace(/"/g, '""')}"`
+        }
+        return s
+      }
+
+      return [
+        csvSafe(r.id),
+        csvSafe(r.timestamp),
+        csvSafe(r.method),
+        csvSafe(r.ip),
+        csvSafe(r.responseStatus ?? 200),
+        csvSafe(requestBody),
+        csvSafe(responseBody),
+      ].join(',')
+    })
+
+    const csvContent = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `requests-${slug}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   const getMethodColor = (method: string) => {
     switch (method?.toUpperCase()) {
       case 'POST': return 'bg-green-100 text-green-800'
@@ -417,6 +535,70 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
           <Text className="mt-2">
             Send requests to <Code>https://{host}/record/{slug}</Code> to see them show up here.
           </Text>
+          <div className="mt-4 flex flex-wrap gap-4 items-end text-sm">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Method</label>
+              <select
+                value={methodFilter}
+                onChange={(e) => setMethodFilter(e.target.value)}
+                className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none bg-transparent min-w-[120px]"
+              >
+                <option value="ALL">All</option>
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="PATCH">PATCH</option>
+                <option value="DELETE">DELETE</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Status</label>
+              <input
+                type="number"
+                placeholder="e.g. 200"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none min-w-[120px]"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Date</label>
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Items per page</label>
+              <input
+                type="number"
+                min={1}
+                value={safePageSize}
+                onChange={(e) => handlePageSizeChange(e.target.value)}
+                className="border-b border-gray-200 py-1 text-sm focus:border-black focus:outline-none w-24"
+              />
+            </div>
+
+            <div className="flex gap-2 ml-auto">
+              <button
+                onClick={() => exportData('json')}
+                className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors"
+              >
+                Export JSON
+              </button>
+              <button
+                onClick={() => exportData('csv')}
+                className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors"
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -516,10 +698,15 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       </section>
 
       <section className="flex flex-col gap-4 mt-8">
-        {requests && requests.length === 0 ? (
+        {(!requests || requests.length === 0) && (
           <Text>No requests recorded yet (or refresh to see new ones).</Text>
-        ) : (
-          requests.map((req) => (
+        )}
+
+        {requests && requests.length > 0 && filteredRequests.length === 0 && (
+          <Text>No requests match the current filters.</Text>
+        )}
+
+        {paginatedRequests.map((req) => (
             <div key={req.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden">
               <div className="flex justify-between items-center mb-4 pb-2 border-b">
                 <div className="flex gap-3 items-center">
@@ -621,7 +808,60 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                 </div>
               </div>
             </div>
-          ))
+        ))}
+
+        {filteredRequests.length > 0 && (
+          <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+            <div>
+              Showing{' '}
+              <span className="font-semibold">
+                {(currentPageClamped - 1) * safePageSize + 1}
+              </span>{' '}
+              -{' '}
+              <span className="font-semibold">
+                {Math.min(currentPageClamped * safePageSize, filteredRequests.length)}
+              </span>{' '}
+              of{' '}
+              <span className="font-semibold">
+                {filteredRequests.length}
+              </span>{' '}
+              requests
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPageClamped === 1}
+                className={`px-3 py-1 border rounded ${
+                  currentPageClamped === 1
+                    ? 'text-gray-300 border-gray-100 cursor-not-allowed'
+                    : 'hover:bg-gray-50'
+                }`}
+              >
+                Previous
+              </button>
+              <span>
+                Page{' '}
+                <span className="font-semibold">
+                  {currentPageClamped}
+                </span>{' '}
+                of{' '}
+                <span className="font-semibold">
+                  {totalPages}
+                </span>
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPageClamped === totalPages}
+                className={`px-3 py-1 border rounded ${
+                  currentPageClamped === totalPages
+                    ? 'text-gray-300 border-gray-100 cursor-not-allowed'
+                    : 'hover:bg-gray-50'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
         )}
       </section>
     </>
