@@ -587,14 +587,47 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
             <div className="flex gap-2 ml-auto">
               <button
                 onClick={() => exportData('json')}
-                className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors"
+                className="px-3 py-1 text-xs border rounded bg-transparent hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M8 3c-1.5 0-3 1-3 3v2c0 1-.5 2-1.5 2.5C4.5 11 5 12 5 13v2c0 2 1.5 3 3 3" />
+                  <path d="M16 3c1.5 0 3 1 3 3v2c0 1 .5 2 1.5 2.5C19.5 11 19 12 19 13v2c0 2-1.5 3-3 3" />
+                </svg>
                 Export JSON
               </button>
               <button
                 onClick={() => exportData('csv')}
-                className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors"
+                className="px-3 py-1 text-xs border rounded bg-transparent hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <path d="M8 8h3" />
+                  <path d="M8 12h3" />
+                  <path d="M8 16h3" />
+                  <path d="M13 8h3" />
+                  <path d="M13 12h3" />
+                  <path d="M13 16h3" />
+                </svg>
                 Export CSV
               </button>
             </div>
