@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       const config = await kv.get(key)
-      return res.status(200).json(config || { status: 200, body: '{"success": true}' })
+      return res.status(200).json(config || { status: 200, body: '{"success": true}', contentType: 'application/json' })
     } catch (error) {
       console.error('Failed to get config:', error)
       return res.status(500).json({ error: 'Failed to get configuration' })
@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
-      const { status, body } = req.body
+      const { status, body, contentType } = req.body
       
       // Basic validation
       const statusCode = Number.parseInt(status)
@@ -29,7 +29,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Invalid status code' })
       }
 
-      const config = { status: statusCode, body }
+      const config = { 
+        status: statusCode, 
+        body, 
+        contentType: contentType || 'application/json' 
+      }
       await kv.set(key, JSON.stringify(config))
       
       return res.status(200).json({ success: true, config })

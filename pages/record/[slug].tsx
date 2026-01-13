@@ -69,7 +69,11 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       // Fetch custom response config
       const configKey = `config:${slug}`
       const rawConfig = await kv.get(configKey)
-      const config = (typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig) || { status: 200, body: '{"success": true}' }
+      const config = (typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig) || { 
+        status: 200, 
+        body: '{"success": true}',
+        contentType: 'application/json'
+      }
 
       const requestData: RequestData = {
         id: crypto.randomUUID(),
@@ -103,7 +107,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       ])
 
       res.statusCode = config.status
-      res.setHeader('Content-Type', 'application/json')
+      res.setHeader('Content-Type', config.contentType || 'application/json')
       res.write(typeof config.body === 'string' ? config.body : JSON.stringify(config.body))
       res.end()
 
@@ -156,6 +160,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
 interface ResponseConfig {
   status: number
   body: string
+  contentType: string
 }
 
 export default function RecordPage({ slug, requests: initialRequests = [], host }: Props) {
@@ -163,7 +168,8 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   const [isSavingConfig, setIsSavingConfig] = useState(false)
   const [localConfig, setLocalConfig] = useState<ResponseConfig>({
     status: 200,
-    body: '{"success": true}'
+    body: '{"success": true}',
+    contentType: 'application/json'
   })
   
   const { data: requests = initialRequests } = useSWR<RequestData[]>(
@@ -322,6 +328,22 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                 onChange={(e) => setLocalConfig({ ...localConfig, status: Number.parseInt(e.target.value) })}
                 className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none w-32"
               />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="content-type" className="text-xs font-bold uppercase text-gray-500">Content Type</label>
+              <select
+                id="content-type"
+                value={localConfig.contentType}
+                onChange={(e) => setLocalConfig({ ...localConfig, contentType: e.target.value })}
+                className="border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none w-64"
+              >
+                <option value="application/json">application/json</option>
+                <option value="application/xml">application/xml</option>
+                <option value="application/soap+xml">application/soap+xml</option>
+                <option value="text/plain">text/plain</option>
+                <option value="text/html">text/html</option>
+              </select>
             </div>
             
             <div className="flex flex-col gap-1">
