@@ -186,8 +186,13 @@ interface ResponseConfig {
 
 export default function RecordPage({ slug, requests: initialRequests = [], host }: Props) {
   const [copied, setCopied] = useState(false)
+  const [copiedBrowser, setCopiedBrowser] = useState(false)
+  const [activeTab, setActiveTab] = useState<'curl' | 'browser'>('curl')
   const [isSavingConfig, setIsSavingConfig] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [isTesting, setIsTesting] = useState(false)
+  const [testResponse, setTestResponse] = useState<{ status: number; data: any; headers: Record<string, string> } | null>(null)
+  const [testError, setTestError] = useState<string | null>(null)
   const [methodFilter, setMethodFilter] = useState<string>('ALL')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [dateFilter, setDateFilter] = useState<string>('') // yyyy-mm-dd
@@ -411,10 +416,117 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   -d '{"test": "data", "source": "callback-handler"}'`
   }, [host, slug, localConfig.contentType])
 
+  const browserConsoleCode = useMemo(() => {
+    const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
+    const contentType = localConfig.contentType || 'application/json'
+    const url = `https://${host}/record/${slug}`
+    
+    if (isXml) {
+      return `fetch('${url}', {
+  method: 'POST',
+  headers: {
+    'Content-Type': '${contentType}'
+  },
+  body: \`<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <web:Request>Test</web:Request>
+   </soapenv:Body>
+</soapenv:Envelope>\`
+})
+  .then(response => response.text())
+  .then(data => console.log('Response:', data))
+  .catch(error => console.error('Error:', error));`
+    }
+
+    return `fetch('${url}', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    test: 'data',
+    source: 'callback-handler'
+  })
+})
+  .then(response => response.json())
+  .then(data => console.log('Response:', data))
+  .catch(error => console.error('Error:', error));`
+  }, [host, slug, localConfig.contentType])
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(curlCommand)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const copyBrowserCodeToClipboard = () => {
+    navigator.clipboard.writeText(browserConsoleCode)
+    setCopiedBrowser(true)
+    setTimeout(() => setCopiedBrowser(false), 2000)
+  }
+
+  const executeTest = async () => {
+    setIsTesting(true)
+    setTestError(null)
+    setTestResponse(null)
+
+    try {
+      const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
+      const contentType = localConfig.contentType || 'application/json'
+      const url = `https://${host}/record/${slug}`
+
+      let body: string
+      if (isXml) {
+        body = `<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <web:Request>Test</web:Request>
+   </soapenv:Body>
+</soapenv:Envelope>`
+      } else {
+        body = JSON.stringify({
+          test: 'data',
+          source: 'callback-handler'
+        })
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': contentType
+        },
+        body
+      })
+
+      const responseHeaders: Record<string, string> = {}
+      response.headers.forEach((value, key) => {
+        responseHeaders[key] = value
+      })
+
+      let responseData: any
+      const responseContentType = response.headers.get('content-type') || ''
+      if (responseContentType.includes('application/json')) {
+        responseData = await response.json()
+      } else {
+        responseData = await response.text()
+      }
+
+      setTestResponse({
+        status: response.status,
+        data: responseData,
+        headers: responseHeaders
+      })
+
+      // Refresh the requests list to show the new request
+      mutateRequests()
+    } catch (error: any) {
+      setTestError(error.message || 'Failed to execute test request')
+    } finally {
+      setIsTesting(false)
+    }
   }
 
   const exportData = (format: 'json' | 'csv') => {
@@ -635,36 +747,260 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          {/* CURL Section */}
+          {/* Test Section */}
           <div className="bg-gray-50 p-6 border rounded-lg shadow-sm h-full flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <Text className="text-sm font-semibold text-gray-700">Test with CURL</Text>
+              <Text className="text-sm font-semibold text-gray-700">Test Endpoint</Text>
+            </div>
+            
+            {/* Tabs */}
+            <div className="flex gap-2 mb-4 border-b">
               <button
-                onClick={copyToClipboard}
-                className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
+                onClick={() => setActiveTab('curl')}
+                className={`px-3 py-2 text-xs font-medium transition-colors ${
+                  activeTab === 'curl'
+                    ? 'border-b-2 border-black text-black'
+                    : 'text-gray-500 hover:text-black'
+                }`}
               >
-                {copied ? (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="green" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                    Copy Command
-                  </>
-                )}
+                cURL
+              </button>
+              <button
+                onClick={() => setActiveTab('browser')}
+                className={`px-3 py-2 text-xs font-medium transition-colors ${
+                  activeTab === 'browser'
+                    ? 'border-b-2 border-black text-black'
+                    : 'text-gray-500 hover:text-black'
+                }`}
+              >
+                Browser Console
               </button>
             </div>
-            <pre className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono leading-relaxed flex-grow min-h-[140px]">
-              {curlCommand}
-            </pre>
-            <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy and run in terminal to test</Text>
+
+            {/* Tab Content */}
+            {activeTab === 'curl' ? (
+              <div className="flex flex-col flex-grow">
+                <div className="flex justify-end gap-2 mb-2">
+                  <button
+                    onClick={executeTest}
+                    disabled={isTesting}
+                    className={`px-3 py-1 text-xs border rounded transition-colors flex items-center gap-2 ${
+                      isTesting
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {isTesting ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M12 6v6l4 2"></path>
+                        </svg>
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Test
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={copyToClipboard}
+                    className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    {copied ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="green" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy Command
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono leading-relaxed flex-grow min-h-[140px]">
+                  {curlCommand}
+                </pre>
+                <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy and run in terminal, or click Test to execute from browser</Text>
+                
+                {/* Test Response Display */}
+                {testError && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="red" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <Text className="text-xs font-semibold text-red-800">Error</Text>
+                    </div>
+                    <Text className="text-xs text-red-700">{testError}</Text>
+                  </div>
+                )}
+                
+                {testResponse && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="green" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <Text className="text-xs font-semibold text-green-800">Response</Text>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                          testResponse.status < 300 ? 'bg-green-100 text-green-700' :
+                          testResponse.status < 400 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {testResponse.status}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setTestResponse(null)
+                          setTestError(null)
+                        }}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="mt-2">
+                      <Text className="text-xs font-semibold text-green-700 mb-1">Body:</Text>
+                      <pre className="text-xs bg-white p-2 rounded border border-green-200 overflow-x-auto font-mono text-gray-800 max-h-48 overflow-y-auto">
+                        {typeof testResponse.data === 'string' 
+                          ? testResponse.data 
+                          : JSON.stringify(testResponse.data, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col flex-grow">
+                <div className="flex justify-end gap-2 mb-2">
+                  <button
+                    onClick={executeTest}
+                    disabled={isTesting}
+                    className={`px-3 py-1 text-xs border rounded transition-colors flex items-center gap-2 ${
+                      isTesting
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {isTesting ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M12 6v6l4 2"></path>
+                        </svg>
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Test
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={copyBrowserCodeToClipboard}
+                    className="px-3 py-1 text-xs border rounded bg-white hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    {copiedBrowser ? (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="green" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy Code
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono leading-relaxed flex-grow min-h-[140px]">
+                  {browserConsoleCode}
+                </pre>
+                <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy and paste in browser console, or click Test to execute from browser</Text>
+                
+                {/* Test Response Display */}
+                {testError && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="red" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <Text className="text-xs font-semibold text-red-800">Error</Text>
+                    </div>
+                    <Text className="text-xs text-red-700">{testError}</Text>
+                  </div>
+                )}
+                
+                {testResponse && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="green" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <Text className="text-xs font-semibold text-green-800">Response</Text>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                          testResponse.status < 300 ? 'bg-green-100 text-green-700' :
+                          testResponse.status < 400 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {testResponse.status}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setTestResponse(null)
+                          setTestError(null)
+                        }}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="mt-2">
+                      <Text className="text-xs font-semibold text-green-700 mb-1">Body:</Text>
+                      <pre className="text-xs bg-white p-2 rounded border border-green-200 overflow-x-auto font-mono text-gray-800 max-h-48 overflow-y-auto">
+                        {typeof testResponse.data === 'string' 
+                          ? testResponse.data 
+                          : JSON.stringify(testResponse.data, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Configuration Section */}
