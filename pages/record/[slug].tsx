@@ -360,6 +360,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   const getMethodColor = (method: string) => {
     switch (method?.toUpperCase()) {
       case 'POST': return 'bg-green-100 text-green-800'
+      case 'PATCH': return 'bg-green-100 text-green-700'
       case 'GET': return 'bg-blue-100 text-blue-800'
       case 'PUT': return 'bg-yellow-100 text-yellow-800'
       case 'DELETE': return 'bg-red-100 text-red-800'
