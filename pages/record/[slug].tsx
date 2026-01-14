@@ -41,6 +41,7 @@ async function getBody(req: any) {
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res, query }) => {
+
   const slug = query.slug as string
   const key = `requests:${slug}`
   const activeKey = `active:${slug}`
@@ -144,6 +145,11 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
 
   // UI request (GET + Accept: text/html) - fetch data for UI
   try {
+    // check if logged in
+    // if (!session) {
+    //   console.log("Guest View");
+    // }
+
     // Initialize slug if not already active
     if (!isActive) {
       await kv.set(activeKey, true)
