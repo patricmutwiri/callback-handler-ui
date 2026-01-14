@@ -1,9 +1,9 @@
 import Layout from '@/components/Layout'
 import { Analytics } from "@vercel/analytics/next"
 import '@vercel/examples-ui/globals.css'
+import { SessionProvider } from 'next-auth/react'
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
-import { SessionProvider } from 'next-auth/react'
 
 function App({ Component, pageProps }: AppProps) {
   return (
@@ -11,6 +11,7 @@ function App({ Component, pageProps }: AppProps) {
       <Head>
         <title>Callback Handler</title>
         <meta name="description" content="Record and inspect HTTP requests in real-time" />
+        <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>
         <meta name="author" content="Patrick Mutwiri" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Callback Handler" />

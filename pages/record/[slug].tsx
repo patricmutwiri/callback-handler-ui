@@ -622,10 +622,13 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   return (
     <>
       <Head>
-        <title>Recorded Requests: {slug}</title>
+        <title>Callback Handler - Recorded Requests: {slug}</title>
         <meta property="og:title" content={`Recorded Requests for ${slug}`} />
         <meta property="og:description" content={`Inspect HTTP requests sent to the ${slug} endpoint in real-time.`} />
         <meta property="og:image" content={`https://${host}/logo.png`} />
+        <meta name="author" content="Patrick Mutwiri"/>
+        <meta name="description" content="Record and inspect HTTP requests" />
+        <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>  
       </Head>
 
       {/* Background Graphic */}

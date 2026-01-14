@@ -35,6 +35,9 @@ export default function Home() {
         <meta property="og:image" content="https://callback-handler-ui.vercel.app/logo.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://callback-handler-ui.vercel.app/logo.png" />
+        <meta name="author" content="Patrick Mutwiri"/>
+        <meta name="description" content="Record and inspect HTTP requests" />
+        <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>  
       </Head>
 
       {/* Background Graphic */}

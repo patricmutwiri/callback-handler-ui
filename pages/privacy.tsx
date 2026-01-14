@@ -13,6 +13,8 @@ export default function PrivacyPolicy() {
         <meta property="og:image" content="https://callback-handler-ui.vercel.app/logo.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://callback-handler-ui.vercel.app/logo.png" />
+        <meta name="author" content="Patrick Mutwiri"/>
+        <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>  
       </Head>
 
       <div className="max-w-4xl mx-auto px-4 py-12">
