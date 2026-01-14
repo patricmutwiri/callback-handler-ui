@@ -53,8 +53,8 @@ export default function PrivacyPolicy() {
             <Text>
               When you sign in using OAuth providers (GitHub or Google), we collect:
             </Text>
-            <ul className="list-disc pl-6 space-y-1">
-              <li>Your email address</li>
+            <ul className="list-disc pl-6 space-y-1 block">
+              <li className="list-item">Your email address</li>
               <li>Your name (if provided)</li>
               <li>Your profile picture (if provided)</li>
               <li>Your provider account ID</li>

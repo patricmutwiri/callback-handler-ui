@@ -2,13 +2,54 @@ import AuthSection from '@/components/AuthSection'
 import { Code, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function Home() {
   const router = useRouter()
+  const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // User-input slugs
+  const createSlug = (value: string) => {
+    // 1. Initial Type/Value Check
+    if (typeof value !== 'string' || !value.trim()) {
+      return '';
+    }
+
+    // 2. Transformation
+    let normalised = value
+      .toLowerCase()
+      .trim()
+      .replaceAll(/\s+/g, '-')           // Replace spaces with hyphens
+      .replaceAll(/[^a-z0-9-]/g, '')     // Remove all non-slug characters
+      .replaceAll(/-+/g, '-')            // Collapse multiple hyphens (--)
+      .replaceAll(/^-+|-+$/g, '');       // Trim hyphens from start/end
+
+    // 3. Length Guard (Truncate instead of early return)
+    if (normalised.length > 64) {
+      normalised = normalised.substring(0, 64).replaceAll(/-+$/, '');
+    }
+
+    // 4. Final Validation & State Update
+    const isValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalised);
+    
+    if (isValid) {
+      const d = new Date();
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      const day = d.getDate().toString().padStart(2, '0');
+      return `${normalised}-${month}${day}`;
+    } else {
+      return '';
+    }
+  };
+
+  useEffect(() => {
+    const validSlug = createSlug(title);
+    setSlug(validSlug);
+  }, [title]);
+
+  // Auto-generated slugs
   const generateSlug = () => {
     const d = new Date()
     const month = (d.getMonth() + 1).toString().padStart(2, '0')
@@ -57,6 +98,7 @@ export default function Home() {
           Generate a unique URL to capture HTTP requests and callbacks. 
           Inspect headers, body, and more in real-time.
         </Text>
+        
 
         {/* Side by side layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
@@ -77,8 +119,8 @@ export default function Home() {
               <input
                 id="slug"
                 type="text"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. my-webhook"
                 className="flex-1 border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-black focus:outline-none"
                 required
