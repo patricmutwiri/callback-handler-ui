@@ -16,8 +16,18 @@ export default function PrivacyPolicy() {
         <meta name="author" content="Patrick Mutwiri"/>
         <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>  
       </Head>
+{/* Background Graphic */}
+      <div 
+        className="fixed inset-0 z-[-1]"
+        style={{ 
+          backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.8)), url(/graffiti-bg.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        }}
+      />
 
-      <div className="max-w-4xl mx-auto px-4 py-12">
+      <div className="max-w-[90vw] mx-auto px-4 py-12">
         <div className="mb-8">
           <Link href="/" className="text-sm text-gray-500 hover:text-black transition-colors inline-flex items-center gap-1 mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -41,7 +51,7 @@ export default function PrivacyPolicy() {
             <Text variant="h2">2. Information We Collect</Text>
             <Text className="font-semibold mb-2">2.1 Authentication Information</Text>
             <Text>
-              When you sign in using OAuth providers (GitHub, Google, or Facebook), we collect:
+              When you sign in using OAuth providers (GitHub or Google), we collect:
             </Text>
             <ul className="list-disc pl-6 space-y-1">
               <li>Your email address</li>
@@ -95,7 +105,7 @@ export default function PrivacyPolicy() {
             <Text variant="h2">5. Third-Party Services</Text>
             <Text className="font-semibold mb-2">5.1 OAuth Providers</Text>
             <Text>
-              We use OAuth authentication through GitHub, Google, and Facebook. These services have their own privacy policies governing the use of your information. We only receive the information you authorize us to access.
+              We use OAuth authentication through GitHub and Google. These services have their own privacy policies governing the use of your information. We only receive the information you authorize us to access.
             </Text>
 
             <Text className="font-semibold mb-2 mt-4">5.2 Pusher</Text>
