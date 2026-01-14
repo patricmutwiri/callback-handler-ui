@@ -6,8 +6,13 @@ export default function PrivacyPolicy() {
   return (
     <>
       <Head>
-        <title>Privacy Policy - Callback Handler</title>
+        <title>Callback Handler - Privacy Policy</title>
         <meta name="description" content="Privacy Policy for Callback Handler" />
+        <meta property="og:title" content="Callback Handler - Privacy Policy" />
+        <meta property="og:description" content="Privacy Policy" />
+        <meta property="og:image" content="https://callback-handler-ui.vercel.app/logo.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://callback-handler-ui.vercel.app/logo.png" />
       </Head>
 
       <div className="max-w-4xl mx-auto px-4 py-12">

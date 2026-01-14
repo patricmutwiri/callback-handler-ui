@@ -1,8 +1,8 @@
+import AuthSection from '@/components/AuthSection'
 import { Code, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import AuthSection from '@/components/AuthSection'
 
 export default function Home() {
   const router = useRouter()

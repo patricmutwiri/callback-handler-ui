@@ -1,8 +1,8 @@
+import { kv } from '@vercel/kv'
 import NextAuth, { NextAuthOptions } from 'next-auth'
+import FacebookProvider from 'next-auth/providers/facebook'
 import GithubProvider from 'next-auth/providers/github'
 import GoogleProvider from 'next-auth/providers/google'
-import FacebookProvider from 'next-auth/providers/facebook'
-import { kv } from '@vercel/kv'
 
 export const authOptions: NextAuthOptions = {
   providers: [
