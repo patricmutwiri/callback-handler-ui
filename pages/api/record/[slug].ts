@@ -2,6 +2,20 @@ import { kv } from '@vercel/kv'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from 'next-auth/react'
 
+// parse the cookies from the request
+const parseCookies = (cookieHeader?: string): Record<string, string> => {
+  const cookies: Record<string, string> = {}
+  if (!cookieHeader) return cookies
+  for (const part of cookieHeader.split(';')) {
+    const [rawName, ...rawVal] = part.split('=')
+    const name = rawName?.trim()
+    if (!name) continue
+    const val = rawVal.join('=').trim()
+    cookies[name] = decodeURIComponent(val)
+  }
+  return cookies
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { slug } = req.query
   if (!slug || typeof slug !== 'string') {

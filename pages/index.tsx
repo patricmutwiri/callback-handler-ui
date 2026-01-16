@@ -48,7 +48,7 @@ export default function Home() {
   const slugCreatedInThisBrowser = (slug: string): void => {
     if(slug.trim().length > 0) {
       const maxAge = 24 * 60 * 60
-      document.cookie = `slug_creator_${slug}=1; path=/; max-age=${maxAge}; SameSite=Lax`
+      document.cookie = `slug_creator_${slug}=1; path=/; max-age=${maxAge}; SameSite=Lax; Author=Mutwiri; Service=Callback-Handler; Repo=https://github.com/patricmutwiri/callback-handler-ui`
     } else {
       console.error('Slug is empty');
     }
