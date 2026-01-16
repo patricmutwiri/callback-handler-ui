@@ -312,7 +312,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     fetcher,
     {
       fallbackData: initialRequests,
-      refreshInterval: 120000,
+      refreshInterval: 180000,
     }
   )
 
@@ -575,6 +575,11 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   }
 
   const exportData = (format: 'json' | 'csv') => {
+    if(!session) {
+      alert('Please login to export your historical requests.')
+      return
+    }
+    
     const data = filteredRequests
     if (!data || data.length === 0) {
       alert('No requests to export (check your filters).')
@@ -1117,7 +1122,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       <section className="flex flex-col gap-4 mt-8">
         {(!session) && (
           <div className="bg-gray-50 p-6 border rounded-lg shadow-sm h-full flex flex-col">
-            <Text>Please login to view your historical requests.</Text>
+            <Text>Please login to view and manage your historical requests.</Text>
             <button
               onClick={() => signIn('credentials')}
               className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold self-end transition-all bg-black text-white hover:bg-gray-800 hover:shadow-lg active:scale-95">
