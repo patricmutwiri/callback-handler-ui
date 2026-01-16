@@ -1,6 +1,7 @@
 import { Code, Link, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
+import { getSession, useSession } from 'next-auth/react'
 import Head from 'next/head'
 import PusherServer from 'pusher'
 import Pusher from 'pusher-js'
@@ -40,8 +41,9 @@ async function getBody(req: any) {
   }
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ req, res, query }) => {
 
+export const getServerSideProps: GetServerSideProps = async ({ req, res, query }) => {
+  const session = await getSession()
   const slug = query.slug as string
   const key = `requests:${slug}`
   const activeKey = `active:${slug}`
@@ -145,11 +147,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
 
   // UI request (GET + Accept: text/html) - fetch data for UI
   try {
-    // check if logged in
-    // if (!session) {
-    //   console.log("Guest View");
-    // }
-
     // Initialize slug if not already active
     if (!isActive) {
       await kv.set(activeKey, true)
@@ -290,6 +287,8 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       refreshInterval: 30000,
     }
   )
+
+  const { data: session } = useSession()
 
   // Derived + filtered data
   const filteredRequests = useMemo(() => {
@@ -1086,12 +1085,16 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
 
       <section className="flex flex-col gap-4 mt-8">
         {(!requests || requests.length === 0) && (
-          <Text>No requests recorded yet (or refresh to see new ones).</Text>
+          <Text>No requests recorded yet.</Text>
         )}
 
         {requests && requests.length > 0 && filteredRequests.length === 0 && (
           <Text>No requests match the current filters.</Text>
         )}
+        
+        {/* {(!session) && (
+          <Text>Please login to view this page.</Text>
+        )} */}
 
         {paginatedRequests.map((req) => (
             <div key={req.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden">
