@@ -312,7 +312,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     fetcher,
     {
       fallbackData: initialRequests,
-      refreshInterval: 30000,
+      refreshInterval: 120000,
     }
   )
 
