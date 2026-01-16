@@ -2,7 +2,7 @@ import { Code, Link, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth'
-import { getSession, useSession } from 'next-auth/react'
+import { getSession, signIn, useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
@@ -1115,7 +1115,18 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       </section>
 
       <section className="flex flex-col gap-4 mt-8">
-        
+        {(!session) && (
+          <div className="bg-gray-50 p-6 border rounded-lg shadow-sm h-full flex flex-col">
+            <Text>Please login to view your historical requests.</Text>
+            <button
+              onClick={() => signIn('credentials')}
+              className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold self-end transition-all bg-black text-white hover:bg-gray-800 hover:shadow-lg active:scale-95"
+            >
+              Sign In
+            </button>
+          </div>
+        )}
+
         {(!requests || requests.length === 0) && (
           <Text>No requests recorded yet.</Text>
         )}
@@ -1132,7 +1143,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                     {req.method}
                   </span>
                   <Text className="text-xs text-gray-400 font-mono">{req.id.substring(0, 8)}</Text>
-                  <Text className="text-sm text-gray-500">{new Date(req.timestamp).toLocaleString()}</Text>
+                  <Text className="text-sm text-gray-500">{new Date(req.timestamp).toLocaleString('en-US', {dateStyle: 'medium', timeStyle: 'short'})}</Text>
                 </div>
                 <Text className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">IP: {req.ip}</Text>
               </div>
