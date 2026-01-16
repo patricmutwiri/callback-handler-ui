@@ -1120,8 +1120,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
             <Text>Please login to view your historical requests.</Text>
             <button
               onClick={() => signIn('credentials')}
-              className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold self-end transition-all bg-black text-white hover:bg-gray-800 hover:shadow-lg active:scale-95"
-            >
+              className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold self-end transition-all bg-black text-white hover:bg-gray-800 hover:shadow-lg active:scale-95">
               Sign In
             </button>
           </div>
