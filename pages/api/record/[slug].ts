@@ -1,6 +1,7 @@
 import { kv } from '@vercel/kv'
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getSession } from 'next-auth/react'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../auth/[...nextauth]'
 
 // parse the cookies from the request
 const parseCookies = (cookieHeader?: string): Record<string, string> => {
@@ -27,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Read session; require it for this endpoint (only owner may access)
-    const session = await getSession()
+    const session = await getServerSession(req, res, authOptions)
 
     if (!session?.user) {
       console.error('Unauthorized: No session found in the request.')

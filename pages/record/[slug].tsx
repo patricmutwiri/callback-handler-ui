@@ -2,7 +2,7 @@ import { Code, Link, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth'
-import { getSession, signIn, useSession } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
@@ -45,7 +45,7 @@ async function getBody(req: any) {
 
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res, query }) => {
-  const session = await getSession()
+  const session = await getServerSession(req, res, authOptions)
   const slug = query.slug as string
   const key = `requests:${slug}`
   const activeKey = `active:${slug}`
