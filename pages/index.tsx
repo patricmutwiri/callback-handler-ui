@@ -43,7 +43,8 @@ export default function Home() {
       return '';
     }
   };
-
+  
+  // mark the slug as created in this browser
   const slugCreatedInThisBrowser = (slug: string): void => {
     const maxAge = 24 * 60 * 60
     document.cookie = `slug_creator_${slug}=1; path=/; max-age=${maxAge}; SameSite=Lax`
