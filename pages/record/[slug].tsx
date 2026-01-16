@@ -320,9 +320,9 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
 
   // Derived + filtered data
   const filteredRequests = useMemo(() => {
-    let result = requests || []
+    let result: RequestData[] = Array.isArray(requests) ? requests.slice() : []
 
-    if (methodFilter !== 'ALL') {
+    if (methodFilter && methodFilter !== 'ALL') {
       result = result.filter((r) => r.method?.toUpperCase() === methodFilter)
     }
 
@@ -353,10 +353,13 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   const safePageSize = pageSize > 0 ? pageSize : 10
   const totalPages = Math.max(1, Math.ceil((filteredRequests.length || 0) / safePageSize))
   const currentPageClamped = Math.min(Math.max(currentPage, 1), totalPages)
+
+  // Pagination: guard against non-array just in case
   const paginatedRequests = useMemo(() => {
+    const safeFiltered = Array.isArray(filteredRequests) ? filteredRequests : []
     const start = (currentPageClamped - 1) * safePageSize
     const end = start + safePageSize
-    return filteredRequests.slice(start, end)
+    return safeFiltered.slice(start, end)
   }, [filteredRequests, currentPageClamped, safePageSize])
 
   // Reset page when filters change
