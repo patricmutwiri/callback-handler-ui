@@ -1115,6 +1115,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       </section>
 
       <section className="flex flex-col gap-4 mt-8">
+        
         {(!requests || requests.length === 0) && (
           <Text>No requests recorded yet.</Text>
         )}
@@ -1123,10 +1124,6 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
           <Text>No requests match the current filters.</Text>
         )}
         
-        {/* {(!session) && (
-          <Text>Please login to view this page.</Text>
-        )} */}
-
         {paginatedRequests.map((req) => (
             <div key={req.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden">
               <div className="flex justify-between items-center mb-4 pb-2 border-b">

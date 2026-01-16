@@ -29,8 +29,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const session = await getSession()
 
     if (!session?.user) {
-      return res.status(401).json({ error: 'Unauthorized: Access denied to slug' })
-    }
+      // check if the slug was created in this browser
+      const cookies = parseCookies(req.headers.cookie)
+      const slugCreator = cookies[`slug_creator_${slug}`]
+      if (!slugCreator) {
+        return res.status(401).json({ error: 'Unauthorized: Access denied to slug' })
+      } else {
+        // get the last 50 requests
+        const rawRequests = await kv.lrange(key, 0, 49) || []
+        const requests = rawRequests.map((req) => {
+          try {
+            return typeof req === 'string' ? JSON.parse(req) : req
+          } catch (e) {
+            console.error('Failed to parse request JSON:', e)
+            return null
+          }
+        }).filter(Boolean)
+        return res.status(200).json(requests)
+      }
+    } 
 
     // Read the owner record for this slug
     const ownerKey = `slug:owner:${slug}`
