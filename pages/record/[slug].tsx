@@ -841,7 +841,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                           <circle cx="12" cy="12" r="10"></circle>
                           <path d="M12 6v6l4 2"></path>
                         </svg>
-                        Testing...
+                        Sending...
                       </>
                     ) : (
                       <>
