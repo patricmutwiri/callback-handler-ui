@@ -46,14 +46,18 @@ export default function Home() {
   
   // mark the slug as created in this browser
   const slugCreatedInThisBrowser = (slug: string): void => {
-    const maxAge = 24 * 60 * 60
-    document.cookie = `slug_creator_${slug}=1; path=/; max-age=${maxAge}; SameSite=Lax`
+    if(slug.trim().length > 0) {
+      const maxAge = 24 * 60 * 60
+      document.cookie = `slug_creator_${slug}=1; path=/; max-age=${maxAge}; SameSite=Lax`
+    } else {
+      console.error('Slug is empty');
+    }
   };
 
   useEffect(() => {
     const validSlug = createSlug(title);
-    slugCreatedInThisBrowser(validSlug); // mark the slug as created in this browser
     setSlug(validSlug); // set the slug in the state
+    slugCreatedInThisBrowser(validSlug); // mark the slug as created in this browser
   }, [title]);
 
   // Auto-generated slugs
