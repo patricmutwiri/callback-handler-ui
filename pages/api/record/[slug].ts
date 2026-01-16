@@ -18,6 +18,7 @@ const parseCookies = (cookieHeader?: string): Record<string, string> => {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { slug } = req.query
+  let override = false
   if (!slug || typeof slug !== 'string') {
     return res.status(400).json({ error: 'Slug is required' })
   }
@@ -29,25 +30,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const session = await getSession()
 
     if (!session?.user) {
+      console.error('Unauthorized: No session found in the request.')
       // check if the slug was created in this browser
       const cookies = parseCookies(req.headers.cookie)
       const slugCreator = cookies[`slug_creator_${slug}`]
       if (!slugCreator) {
+        console.error('Unauthorized: Slug creator not found.')
         return res.status(401).json({ error: 'Unauthorized: Access denied to slug' })
       } else {
-        // get the last 50 requests
-        const rawRequests = await kv.lrange(key, 0, 49) || []
-        const requests = rawRequests.map((req) => {
-          try {
-            return typeof req === 'string' ? JSON.parse(req) : req
-          } catch (e) {
-            console.error('Failed to parse request JSON:', e)
-            return null
-          }
-        }).filter(Boolean)
-        return res.status(200).json(requests)
+        override = true
+        console.warn('Slug creator found, get records. User is not logged in.')
       }
-    } 
+    }
+    console.log('Override flag:', override)
 
     // Read the owner record for this slug
     const ownerKey = `slug:owner:${slug}`
@@ -59,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to verify ownership' })
     }
 
-    if (!ownerRaw) {
+    if (!ownerRaw && !override) {
       // No owner recorded -> deny access
       return res.status(403).json({ error: 'Forbidden: Access denied to slug' })
     }
@@ -73,8 +68,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to verify ownership' })
     }
 
-    const sessionId = session.user.id ?? null
-    const sessionEmail = session.user.email ?? null
+    const sessionId = session?.user?.id ?? null
+    const sessionEmail = session?.user?.email ?? null
 
     const ownerId = owner?.id ?? null
     const ownerEmail = owner?.email ?? null
@@ -87,7 +82,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       isOwner = true
     }
 
-    if (!isOwner) {
+    if (!isOwner && !override) {
       return res.status(403).json({ error: 'Forbidden: Access denied to slug' })
     }
     
