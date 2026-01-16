@@ -6,8 +6,8 @@ import { useEffect, useState } from 'react'
 
 export default function Home() {
   const router = useRouter()
-  const [title, setTitle] = useState('')
-  const [slug, setSlug] = useState('')
+  const [title, setTitle] = useState<string>('')
+  const [slug, setSlug] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
   // User-input slugs
@@ -50,12 +50,9 @@ export default function Home() {
   }, [title]);
 
   // Auto-generated slugs
-  const generateSlug = () => {
-    const d = new Date()
-    const month = (d.getMonth() + 1).toString().padStart(2, '0')
-    const day = d.getDate().toString().padStart(2, '0')
+  const generateSlug = (): string => {
     const randomSlug = Math.random().toString(36).substring(7)
-    setSlug(`${randomSlug}-${month}${day}`)
+    return randomSlug.toString()
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -127,7 +124,7 @@ export default function Home() {
               />
               <button
                 type="button"
-                onClick={generateSlug}
+                onClick={() => setTitle(generateSlug().toString())}
                 className="px-4 py-2 text-sm border rounded hover:bg-gray-50 bg-white flex items-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
