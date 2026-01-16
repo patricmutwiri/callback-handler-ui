@@ -31,6 +31,8 @@ export const authOptions: NextAuthOptions = {
           image: user.image,
           provider: account?.provider,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString()
         })
       }
       return true
@@ -40,6 +42,14 @@ export const authOptions: NextAuthOptions = {
         const userKey = `user:${session.user.email}`
         const userData = await kv.get(userKey)
         if (userData && typeof userData === 'object') {
+          session.user.id = (userData as any).id
+          session.user.createdAt = (userData as any).createdAt
+          session.user.updatedAt = (userData as any).updatedAt
+          session.user.lastLoginAt = (userData as any).lastLoginAt
+          session.user.provider = (userData as any).provider
+          session.user.name = (userData as any).name
+          session.user.image = (userData as any).image
+          session.user.email = (userData as any).email
           session.user.id = (userData as any).id
         }
       }

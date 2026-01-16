@@ -1,8 +1,10 @@
 import { Code, Link, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
+import { getServerSession } from 'next-auth'
 import { getSession, useSession } from 'next-auth/react'
 import Head from 'next/head'
+import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
 import Pusher from 'pusher-js'
 import { useEffect, useMemo, useState } from 'react'
@@ -150,6 +152,32 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
     // Initialize slug if not already active
     if (!isActive) {
       await kv.set(activeKey, true)
+    }
+    
+    // tie slug to logged-in user if available and no owner exists yet.
+    try {
+      const session = await getServerSession(req, res, authOptions)
+      if (session?.user) {
+        const userId = session.user.id ?? session.user.email ?? null
+        if (userId) {
+          const ownerKey = `slug:owner:${slug}`
+          const existingOwner = await kv.get(ownerKey)
+          if (!existingOwner) {
+            const ownerData = {
+              id: userId,
+              email: session.user.email ?? null,
+              name: session.user.name ?? null,
+              image: session.user.image ?? null,
+              provider: session.user.provider ?? null
+            }
+            await kv.set(ownerKey, JSON.stringify(ownerData))
+            await kv.sadd(`user_slugs:${userId}`, slug)
+          }
+        }
+      }
+    } catch (ownerErr) {
+      // Non-fatal: log but continue to render UI
+      console.error('Failed to persist slug owner mapping:', ownerErr)
     }
 
     const rawRequests = await kv.lrange(key, 0, 49) || []
