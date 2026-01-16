@@ -52,7 +52,8 @@ export default function Home() {
 
   useEffect(() => {
     const validSlug = createSlug(title);
-    setSlug(validSlug);
+    slugCreatedInThisBrowser(validSlug); // mark the slug as created in this browser
+    setSlug(validSlug); // set the slug in the state
   }, [title]);
 
   // Auto-generated slugs
