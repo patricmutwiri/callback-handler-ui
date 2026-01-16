@@ -44,6 +44,11 @@ export default function Home() {
     }
   };
 
+  const slugCreatedInThisBrowser = (slug: string): void => {
+    const maxAge = 24 * 60 * 60
+    document.cookie = `slug_creator_${slug}=1; path=/; max-age=${maxAge}; SameSite=Lax`
+  };
+
   useEffect(() => {
     const validSlug = createSlug(title);
     setSlug(validSlug);
