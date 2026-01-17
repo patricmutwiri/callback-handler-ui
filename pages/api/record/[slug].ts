@@ -31,19 +31,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const session = await getServerSession(req, res, authOptions)
 
     if (!session?.user) {
-      console.error('Unauthorized: No session found in the request.')
+      console.warn('Unauthorized: No session found in the request.')
       // check if the slug was created in this browser
       const cookies = parseCookies(req.headers.cookie)
       const slugCreator = cookies[`slug_creator_${slug}`]
       if (!slugCreator) {
-        console.error('Unauthorized: Slug creator not found.')
         return res.status(401).json({ error: 'Unauthorized: Access denied to slug' })
       } else {
         override = true
-        console.warn('Slug creator found, get records. User is not logged in.')
       }
     }
-    console.log('Override flag:', override)
 
     // Read the owner record for this slug
     const ownerKey = `slug:owner:${slug}`
@@ -51,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       ownerRaw = await kv.get(ownerKey)
     } catch (ownerGetErr) {
-      console.error('Failed to read owner key from KV:', ownerGetErr)
+      console.error('Failed to verify ownership:', ownerGetErr)
       return res.status(500).json({ error: 'Failed to verify ownership' })
     }
 
