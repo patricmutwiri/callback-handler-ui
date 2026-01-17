@@ -12,6 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     try {
       const config = await kv.get(key)
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30')
       return res.status(200).json(config || { status: 200, body: '{"success": true}', contentType: 'application/json' })
     } catch (error) {
       console.error('Failed to get config:', error)
