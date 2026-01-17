@@ -449,7 +449,6 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         body: JSON.stringify(localConfig)
       })
       mutateConfig()
-      alert('Response configuration saved!')
     } catch (e) {
       console.error('Failed to save configuration:', e)
       alert('Failed to save configuration')
@@ -1217,7 +1216,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
           <div className="bg-gray-50 p-6 border rounded-lg shadow-sm h-full flex flex-col">
             <Text>Please login to view and manage your historical requests.</Text>
             <button
-              onClick={() => signIn('credentials')}
+              onClick={() => {
+                const callbackUrl = typeof window !== 'undefined' ? window.location.href : '/'
+                signIn('credentials', { callbackUrl })
+              }}
               className="px-4 py-2 rounded text-xs uppercase tracking-widest font-bold self-end transition-all bg-black text-white hover:bg-gray-800 hover:shadow-lg active:scale-95">
               Sign In
             </button>
