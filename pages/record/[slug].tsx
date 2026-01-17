@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Code, Link, Text } from '@vercel/examples-ui'
 import { kv } from '@vercel/kv'
 import { GetServerSideProps } from 'next'
@@ -7,7 +8,6 @@ import Head from 'next/head'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
 import Pusher from 'pusher-js'
-import { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
 
 interface RequestData {
@@ -31,9 +31,18 @@ interface Props {
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 async function getBody(req: any) {
-  const buffers = []
+  if (req.body) return req.body
+  const buffers: Uint8Array[] = []
+  let total = 0
+  const LIMIT = 1024 * 1024 // 1MB safety limit
   for await (const chunk of req) {
-    buffers.push(chunk)
+    const c: Uint8Array = typeof chunk === 'string' ? Buffer.from(chunk) : chunk
+    total += c.length
+    if (total > LIMIT) {
+      // stop accumulating overly large bodies
+      break
+    }
+    buffers.push(c)
   }
   const data = Buffer.concat(buffers).toString()
   try {
@@ -43,15 +52,15 @@ async function getBody(req: any) {
   }
 }
 
-
 export const getServerSideProps: GetServerSideProps = async ({ req, res, query }) => {
   const session = await getServerSession(req, res, authOptions)
   const slug = query.slug as string
   const key = `requests:${slug}`
   const activeKey = `active:${slug}`
 
-  // Detect if this is a browser UI request or Next.js data request
-  const isBrowserRequest = (req.method === 'GET' && req.headers.accept?.includes('text/html')) || req.headers['x-nextjs-data']
+  const accept = (req.headers.accept || '') as string
+  const isNextData = Boolean(req.headers['x-nextjs-data'])
+  const isBrowserRequest = (req.method === 'GET' && accept.includes('text/html')) || isNextData
 
   // Check if slug is active
   const isActive = await kv.get(activeKey)
@@ -76,7 +85,13 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       // Fetch custom response config
       const configKey = `config:${slug}`
       const rawConfig = await kv.get(configKey)
-      const config = (typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig) || { 
+      let config: any
+      if (typeof rawConfig === 'string') {
+        try { config = JSON.parse(rawConfig) } catch { config = null }
+      } else {
+        config = rawConfig
+      }
+      config = config || { 
         status: 200, 
         body: '{"success": true}',
         contentType: 'application/json'
@@ -102,16 +117,21 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       // Keep only last 100 requests
       await kv.ltrim(key, 0, 99)
       
-      // Set TTL on all relevant keys
-      await Promise.all([
-        kv.expire(key, TTL),
-        kv.expire(activeKey, TTL),
-        kv.expire(configKey, TTL),
-        // Update stats
-        kv.sadd('all_slugs', slug),
-        kv.incr(`stats:total:${today}`),
-        kv.incr(`stats:slug:${slug}:${today}`)
-      ])
+      // Fire-and-forget stats/expiry to reduce latency
+      ;(async () => {
+        try {
+          await Promise.all([
+            kv.expire(key, TTL),
+            kv.expire(activeKey, TTL),
+            kv.expire(configKey, TTL),
+            kv.sadd('all_slugs', slug),
+            kv.incr(`stats:total:${today}`),
+            kv.incr(`stats:slug:${slug}:${today}`)
+          ])
+        } catch (e) {
+          console.error('Non-fatal stats/expire failure', e)
+        }
+      })()
 
       // Trigger Pusher event for real-time update
       try {
@@ -154,40 +174,38 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       await kv.set(activeKey, true)
     }
     
-    // tie slug to logged-in user if available and no owner exists yet.
-    try {
-      const session = await getServerSession(req, res, authOptions)
-      if (session?.user) {
-        const userId = session.user.id ?? session.user.email ?? null
-        if (userId) {
-          const ownerKey = `slug:owner:${slug}`
-          const existingOwner = await kv.get(ownerKey)
-          if (!existingOwner) {
-            const ownerData = {
-              id: userId,
-              email: session.user.email ?? null,
-              name: session.user.name ?? null,
-              image: session.user.image ?? null,
-              provider: session.user.provider ?? null
+    // tie slug to logged-in user if available and no owner exists yet (non-blocking)
+    ;(async () => {
+      try {
+        const session = await getServerSession(req, res, authOptions)
+        if (session?.user) {
+          const userId = session.user.id ?? session.user.email ?? null
+          if (userId) {
+            const ownerKey = `slug:owner:${slug}`
+            const existingOwner = await kv.get(ownerKey)
+            if (!existingOwner) {
+              const ownerData = {
+                id: userId,
+                email: session.user.email ?? null,
+                name: session.user.name ?? null,
+                image: session.user.image ?? null,
+                provider: session.user.provider ?? null
+              }
+              await kv.set(ownerKey, JSON.stringify(ownerData))
+              await kv.sadd(`user_slugs:${userId}`, slug)
             }
-            await kv.set(ownerKey, JSON.stringify(ownerData))
-            await kv.sadd(`user_slugs:${userId}`, slug)
           }
         }
+      } catch (ownerErr) {
+        console.error('Failed to persist slug owner mapping:', ownerErr)
       }
-    } catch (ownerErr) {
-      // Non-fatal: log but continue to render UI
-      console.error('Failed to persist slug owner mapping:', ownerErr)
-    }
+    })()
 
     const rawRequests = await kv.lrange(key, 0, 49) || []
-    const requests = rawRequests.map((req) => {
-      try {
-        return typeof req === 'string' ? JSON.parse(req) : req
-      } catch (e) {
-        console.error('Failed to parse request JSON:', e)
-        return null
-      }
+    const requests = (rawRequests as any[]).map((item) => {
+      if (!item) return null
+      if (typeof item === 'object') return item as RequestData
+      try { return JSON.parse(item as string) } catch { return null }
     }).filter(Boolean) as RequestData[]
 
     return {
@@ -235,7 +253,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     body: '{"success": true}',
     contentType: 'application/json'
   })
-  
+
   const validateBody = (contentType: string, body: string): string | null => {
     if (!body) return null
     
@@ -285,33 +303,33 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     return ""
   }
 
-  const onContentTypeChange = (newType: string) => {
+  const onContentTypeChange = useCallback((newType: string) => {
     const error = validateBody(newType, localConfig.body)
     setValidationError(error)
-    
-    // Automatically switch to template if body is empty or default
     if (!localConfig.body || localConfig.body === '{"success": true}' || localConfig.body.includes('soapenv:Envelope') || localConfig.body.includes('"service": "Callback Handler"')) {
       const template = getTemplate(newType)
       if (template) {
-        setLocalConfig({ ...localConfig, contentType: newType, body: template })
+        setLocalConfig((prev) => ({ ...prev, contentType: newType, body: template }))
         setValidationError(null)
         return
       }
     }
-    
-    setLocalConfig({ ...localConfig, contentType: newType })
-  }
+    setLocalConfig((prev) => ({ ...prev, contentType: newType }))
+  }, [localConfig.body])
 
-  const onBodyChange = (newBody: string) => {
-    setLocalConfig({ ...localConfig, body: newBody })
+  const onBodyChange = useCallback((newBody: string) => {
+    setLocalConfig((prev) => ({ ...prev, body: newBody }))
     setValidationError(validateBody(localConfig.contentType, newBody))
-  }
+  }, [localConfig.contentType])
 
   const { data: requests = initialRequests, mutate: mutateRequests } = useSWR<RequestData[]>(
     `/api/record/${slug}`,
     fetcher,
     {
       fallbackData: initialRequests,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5000,
       refreshInterval: 180000,
     }
   )
@@ -374,17 +392,17 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     }
   }, [])
 
-  const handlePageSizeChange = (value: string) => {
+  const handlePageSizeChange = useCallback((value: string) => {
     const n = Number.parseInt(value, 10)
-    if (Number.isNaN(n) || n <= 0) {
-      setPageSize(10)
-      return
-    }
-    setPageSize(n)
-  }
+    setPageSize((prev) => {
+      if (Number.isNaN(n) || n <= 0) return 10
+      return n
+    })
+  }, [])
 
   // Real-time updates via Pusher
   useEffect(() => {
+    if (typeof window === 'undefined') return
     if (!process.env.NEXT_PUBLIC_PUSHER_KEY) return
 
     const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
@@ -404,7 +422,8 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
 
   const { data: config, mutate: mutateConfig } = useSWR<ResponseConfig>(
     `/api/config/${slug}`,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5000 }
   )
 
   // Sync local state when config is fetched
@@ -500,17 +519,19 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   .catch(error => console.error('Error:', error));`
   }, [host, slug, localConfig.contentType, protocol])
 
-  const copyToClipboard = () => {
+  const copyToClipboard = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return
     navigator.clipboard.writeText(curlCommand)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }
+  }, [curlCommand])
 
-  const copyBrowserCodeToClipboard = () => {
+  const copyBrowserCodeToClipboard = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return
     navigator.clipboard.writeText(browserConsoleCode)
     setCopiedBrowser(true)
     setTimeout(() => setCopiedBrowser(false), 2000)
-  }
+  }, [browserConsoleCode])
 
   const executeTest = async () => {
     setIsTesting(true)
@@ -637,7 +658,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     URL.revokeObjectURL(url)
   }
 
-  const getMethodColor = (method: string) => {
+  const getMethodColor = useCallback((method: string) => {
     switch (method?.toUpperCase()) {
       case 'POST': return 'bg-green-100 text-green-800'
       case 'PATCH': return 'bg-green-100 text-green-700'
@@ -646,19 +667,91 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       case 'DELETE': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
-  }
+  }, [])
 
-  const getStatusColor = (status: number) => {
+  const getStatusColor = useCallback((status: number) => {
     if (status < 300) return 'bg-green-100 text-green-700'
     if (status < 400) return 'bg-yellow-100 text-yellow-700'
     return 'bg-red-100 text-red-700'
-  }
+  }, [])
 
-  const copyDataToClipboard = (data: any, label: string) => {
+  const copyDataToClipboard = useCallback((data: any, label: string) => {
     const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
-    navigator.clipboard.writeText(text)
-    alert(`${label} copied to clipboard!`)
-  }
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+      alert(`${label} copied to clipboard!`)
+    }
+  }, [])
+
+  const RequestItem: React.FC<{ req: RequestData; getMethodColor: (m: string) => string; getStatusColor: (s: number) => string; copyDataToClipboard: (d: any, l: string) => void; }> = React.memo(({ req, getMethodColor, getStatusColor, copyDataToClipboard }) => {
+    return (
+      <div key={req.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden">
+        <div className="flex justify-between items-center mb-4 pb-2 border-b">
+          <div className="flex gap-3 items-center">
+            <span className={`px-2 py-1 rounded text-xs font-bold ${getMethodColor(req.method)}`}>
+              {req.method}
+            </span>
+            <span className="text-xs text-gray-400 font-mono">{req.id.substring(0, 8)}</span>
+            <span className="text-sm text-gray-500">{new Date(req.timestamp).toLocaleString('en-US', {dateStyle: 'medium', timeStyle: 'short'})}</span>
+          </div>
+          <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">IP: {req.ip}</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center border-b pb-1">
+              <span className="text-xs uppercase font-bold text-gray-400">Headers</span>
+              <button onClick={() => copyDataToClipboard(req.headers, 'Headers')} className="text-gray-400 hover:text-black transition-colors" title="Copy Headers">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
+            <div className="flex flex-col gap-1.5 overflow-auto max-h-64 pr-2 scrollbar-thin">
+              {Object.entries(req.headers).map(([key, value]) => (
+                <div key={key} className="text-xs break-all text-gray-800">
+                  <span className="font-semibold text-gray-500 uppercase mr-1" style={{fontSize: '10px'}}>{key}:</span>
+                  <span className="font-mono bg-gray-50 px-1 rounded">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center border-b pb-1">
+              <span className="text-xs uppercase font-bold text-gray-400">Request Payload</span>
+              {req.body && (
+                <button onClick={() => copyDataToClipboard(req.body, 'Payload')} className="text-gray-400 hover:text-black transition-colors" title="Copy Payload">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              )}
+            </div>
+            {req.body ? (
+              <pre className="bg-gray-50 p-3 border rounded text-xs overflow-auto max-h-48 font-mono text-gray-700 whitespace-pre-wrap">{typeof req.body === 'string' ? req.body : JSON.stringify(req.body, null, 2)}</pre>
+            ) : (
+              <div className="h-full flex items-center justify-center border-2 border-dashed rounded-md bg-gray-50 py-10">
+                <span className="text-xs text-gray-400 italic">No payload provided</span>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center border-b pb-1">
+              <span className="text-xs uppercase font-bold text-gray-400">Mock Response</span>
+              <button onClick={() => copyDataToClipboard(req.responseBody || {"success": true}, 'Response')} className="text-gray-400 hover:text-black transition-colors" title="Copy Response">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-500 uppercase" style={{fontSize: '10px'}}>Status:</span>
+                <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusColor(req.responseStatus || 200)}`}>{req.responseStatus || 200}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-gray-500 uppercase" style={{fontSize: '10px'}}>Body:</span>
+                <pre className="bg-gray-50 p-3 border rounded text-xs overflow-auto max-h-48 font-mono text-gray-700 whitespace-pre-wrap">{typeof req.responseBody === 'string' ? req.responseBody : JSON.stringify(req.responseBody || {"success": true}, null, 2)}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  })
 
   return (
     <>
@@ -1140,107 +1233,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         )}
         
         {paginatedRequests.map((req) => (
-            <div key={req.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden">
-              <div className="flex justify-between items-center mb-4 pb-2 border-b">
-                <div className="flex gap-3 items-center">
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${getMethodColor(req.method)}`}>
-                    {req.method}
-                  </span>
-                  <Text className="text-xs text-gray-400 font-mono">{req.id.substring(0, 8)}</Text>
-                  <Text className="text-sm text-gray-500">{new Date(req.timestamp).toLocaleString('en-US', {dateStyle: 'medium', timeStyle: 'short'})}</Text>
-                </div>
-                <Text className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">IP: {req.ip}</Text>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Column 1: Headers */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center border-b pb-1">
-                    <Text className="text-xs uppercase font-bold text-gray-400">Headers</Text>
-                    <button 
-                      onClick={() => copyDataToClipboard(req.headers, 'Headers')}
-                      className="text-gray-400 hover:text-black transition-colors"
-                      title="Copy Headers"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-1.5 overflow-auto max-h-64 pr-2 scrollbar-thin">
-                    {Object.entries(req.headers).map(([key, value]) => (
-                      <div key={key} className="text-xs break-all text-gray-800">
-                        <span className="font-semibold text-gray-500 uppercase mr-1" style={{fontSize: '10px'}}>{key}:</span>
-                        <span className="font-mono bg-gray-50 px-1 rounded">{String(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Column 2: Request Payload */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center border-b pb-1">
-                    <Text className="text-xs uppercase font-bold text-gray-400">Request Payload</Text>
-                    {req.body && (
-                      <button 
-                        onClick={() => copyDataToClipboard(req.body, 'Payload')}
-                        className="text-gray-400 hover:text-black transition-colors"
-                        title="Copy Payload"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                  {req.body ? (
-                    <pre className="bg-gray-50 p-3 border rounded text-xs overflow-auto max-h-48 font-mono text-gray-700 whitespace-pre-wrap">
-                      {typeof req.body === 'string' ? req.body : JSON.stringify(req.body, null, 2)}
-                    </pre>
-                  ) : (
-                    <div className="h-full flex items-center justify-center border-2 border-dashed rounded-md bg-gray-50 py-10">
-                      <Text className="text-xs text-gray-400 italic">No payload provided</Text>
-                    </div>
-                  )}
-                </div>
-
-                {/* Column 3: Mock Response */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center border-b pb-1">
-                    <Text className="text-xs uppercase font-bold text-gray-400">Mock Response</Text>
-                    <button 
-                      onClick={() => copyDataToClipboard(req.responseBody || {"success": true}, 'Response')}
-                      className="text-gray-400 hover:text-black transition-colors"
-                      title="Copy Response"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-gray-500 uppercase" style={{fontSize: '10px'}}>Status:</span>
-                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusColor(req.responseStatus || 200)}`}>
-                        {req.responseStatus || 200}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-bold text-gray-500 uppercase" style={{fontSize: '10px'}}>Body:</span>
-                      <pre className="bg-gray-50 p-3 border rounded text-xs overflow-auto max-h-48 font-mono text-gray-700 whitespace-pre-wrap">
-                        {typeof req.responseBody === 'string' ? 
-                          req.responseBody : 
-                          JSON.stringify(req.responseBody || {"success": true}, null, 2)
-                        }
-                      </pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <RequestItem key={req.id} req={req} getMethodColor={getMethodColor} getStatusColor={getStatusColor} copyDataToClipboard={copyDataToClipboard} />
         ))}
 
         {filteredRequests.length > 0 && (
@@ -1300,3 +1293,4 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     </>
   )
 }
+
