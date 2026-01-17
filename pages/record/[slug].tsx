@@ -94,8 +94,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         responseBody: config.body
       }
 
-      // 1 month TTL in seconds (30 days)
-      const TTL = 30 * 24 * 60 * 60
+      // 1 Year TTL in seconds
+      const TTL = 365 * 24 * 60 * 60
 
       // Store in Redis List
       await kv.lpush(key, JSON.stringify(requestData))
