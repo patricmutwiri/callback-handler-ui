@@ -11,6 +11,7 @@ function App({ Component, pageProps }: AppProps) {
     <SessionProvider session={pageProps.session}>
       <Head>
         <title>Callback Handler</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content="Record and inspect HTTP requests in real-time" />
         <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>
         <meta name="author" content="Patrick Mutwiri" />

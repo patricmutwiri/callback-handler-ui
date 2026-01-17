@@ -78,6 +78,7 @@ export default function Home() {
     <>
       <Head>
         <title>Callback Handler</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content="Record and inspect HTTP requests" />
         <meta property="og:title" content="Callback Handler - Record & Inspect HTTP Requests" />
         <meta property="og:description" content="Generate a unique URL to capture HTTP requests and callbacks. Inspect headers, body, and more in real-time." />

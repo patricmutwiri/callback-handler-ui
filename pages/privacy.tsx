@@ -7,6 +7,7 @@ export default function PrivacyPolicy() {
     <>
       <Head>
         <title>Callback Handler - Privacy Policy</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content="Privacy Policy for Callback Handler" />
         <meta property="og:title" content="Callback Handler - Privacy Policy" />
         <meta property="og:description" content="Privacy Policy" />
