@@ -91,8 +91,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       } else {
         config = rawConfig
       }
-      config = config || { 
-        status: 200, 
+      config = config || {
+        status: 200,
         body: '{"success": true}',
         contentType: 'application/json'
       }
@@ -116,22 +116,22 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       await kv.lpush(key, JSON.stringify(requestData))
       // Keep only last 100 requests
       await kv.ltrim(key, 0, 99)
-      
-      // Fire-and-forget stats/expiry to reduce latency
-      ;(async () => {
-        try {
-          await Promise.all([
-            kv.expire(key, TTL),
-            kv.expire(activeKey, TTL),
-            kv.expire(configKey, TTL),
-            kv.sadd('all_slugs', slug),
-            kv.incr(`stats:total:${today}`),
-            kv.incr(`stats:slug:${slug}:${today}`)
-          ])
-        } catch (e) {
-          console.error('Non-fatal stats/expire failure', e)
-        }
-      })()
+
+        // Fire-and-forget stats/expiry to reduce latency
+        ; (async () => {
+          try {
+            await Promise.all([
+              kv.expire(key, TTL),
+              kv.expire(activeKey, TTL),
+              kv.expire(configKey, TTL),
+              kv.sadd('all_slugs', slug),
+              kv.incr(`stats:total:${today}`),
+              kv.incr(`stats:slug:${slug}:${today}`)
+            ])
+          } catch (e) {
+            console.error('Non-fatal stats/expire failure', e)
+          }
+        })()
 
       // Trigger Pusher event for real-time update
       try {
@@ -173,9 +173,9 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
     if (!isActive) {
       await kv.set(activeKey, true)
     }
-    
+
     // tie slug to logged-in user if available and no owner exists yet (non-blocking)
-    ;(async () => {
+    ; (async () => {
       try {
         const session = await getServerSession(req, res, authOptions)
         if (session?.user) {
@@ -256,7 +256,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
 
   const validateBody = (contentType: string, body: string): string | null => {
     if (!body) return null
-    
+
     if (contentType === 'application/json') {
       try {
         JSON.parse(body)
@@ -265,7 +265,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         return `Invalid JSON: ${e.message}`
       }
     }
-    
+
     if (contentType === 'application/xml' || contentType === 'application/soap+xml') {
       try {
         const parser = new DOMParser()
@@ -279,7 +279,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         return `Invalid XML: ${e.message}`
       }
     }
-    
+
     return null
   }
 
@@ -461,7 +461,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
     const contentType = localConfig.contentType || 'application/json'
     const baseUrl = `${protocol}//${host}/record/${slug}`
-    
+
     if (isXml) {
       return String.raw`curl -v -X POST ${baseUrl} \
   -H "Content-Type: ${contentType}" \
@@ -483,7 +483,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
     const contentType = localConfig.contentType || 'application/json'
     const url = `${protocol}//${host}/record/${slug}`
-    
+
     if (isXml) {
       return `fetch('${url}', {
   method: 'POST',
@@ -595,11 +595,11 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   }
 
   const exportData = (format: 'json' | 'csv') => {
-    if(!session) {
+    if (!session) {
       alert('Please login to export your historical requests.')
       return
     }
-    
+
     const data = filteredRequests
     if (!data || data.length === 0) {
       alert('No requests to export (check your filters).')
@@ -691,7 +691,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
               {req.method}
             </span>
             <span className="text-xs text-gray-400 font-mono">{req.id.substring(0, 8)}</span>
-            <span className="text-sm text-gray-500">{new Date(req.timestamp).toLocaleString('en-US', {dateStyle: 'medium', timeStyle: 'short'})}</span>
+            <span className="text-sm text-gray-500">{new Date(req.timestamp).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
           </div>
           <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded">IP: {req.ip}</span>
         </div>
@@ -706,7 +706,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
             <div className="flex flex-col gap-1.5 overflow-auto max-h-64 pr-2 scrollbar-thin">
               {Object.entries(req.headers).map(([key, value]) => (
                 <div key={key} className="text-xs break-all text-gray-800">
-                  <span className="font-semibold text-gray-500 uppercase mr-1" style={{fontSize: '10px'}}>{key}:</span>
+                  <span className="font-semibold text-gray-500 uppercase mr-1" style={{ fontSize: '10px' }}>{key}:</span>
                   <span className="font-mono bg-gray-50 px-1 rounded">{String(value)}</span>
                 </div>
               ))}
@@ -732,18 +732,18 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center border-b pb-1">
               <span className="text-xs uppercase font-bold text-gray-400">Mock Response</span>
-              <button onClick={() => copyDataToClipboard(req.responseBody || {"success": true}, 'Response')} className="text-gray-400 hover:text-black transition-colors" title="Copy Response">
+              <button onClick={() => copyDataToClipboard(req.responseBody || { "success": true }, 'Response')} className="text-gray-400 hover:text-black transition-colors" title="Copy Response">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               </button>
             </div>
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-500 uppercase" style={{fontSize: '10px'}}>Status:</span>
+                <span className="text-xs font-bold text-gray-500 uppercase" style={{ fontSize: '10px' }}>Status:</span>
                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${getStatusColor(req.responseStatus || 200)}`}>{req.responseStatus || 200}</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-gray-500 uppercase" style={{fontSize: '10px'}}>Body:</span>
-                <pre className="bg-gray-50 p-3 border rounded text-xs overflow-auto max-h-48 font-mono text-gray-700 whitespace-pre-wrap">{typeof req.responseBody === 'string' ? req.responseBody : JSON.stringify(req.responseBody || {"success": true}, null, 2)}</pre>
+                <span className="text-xs font-bold text-gray-500 uppercase" style={{ fontSize: '10px' }}>Body:</span>
+                <pre className="bg-gray-50 p-3 border rounded text-xs overflow-auto max-h-48 font-mono text-gray-700 whitespace-pre-wrap">{typeof req.responseBody === 'string' ? req.responseBody : JSON.stringify(req.responseBody || { "success": true }, null, 2)}</pre>
               </div>
             </div>
           </div>
@@ -759,15 +759,15 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         <meta property="og:title" content={`Recorded Requests for ${slug}`} />
         <meta property="og:description" content={`Inspect HTTP requests sent to the ${slug} endpoint in real-time.`} />
         <meta property="og:image" content={`https://${host}/logo.png`} />
-        <meta name="author" content="Patrick Mutwiri"/>
+        <meta name="author" content="Patrick Mutwiri" />
         <meta name="description" content="Record and inspect HTTP requests" />
-        <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>  
+        <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection" />
       </Head>
 
       {/* Background Graphic */}
-      <div 
+      <div
         className="fixed inset-0 z-[-1]"
-        style={{ 
+        style={{
           backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.95)), url(/records-bg.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -897,26 +897,24 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
             <div className="flex justify-between items-center mb-4">
               <Text className="text-sm font-semibold text-gray-700">Test Endpoint</Text>
             </div>
-            
+
             {/* Tabs */}
             <div className="flex gap-2 mb-4 border-b">
               <button
                 onClick={() => setActiveTab('curl')}
-                className={`px-3 py-2 text-xs font-medium transition-colors ${
-                  activeTab === 'curl'
-                    ? 'border-b-2 border-black text-black'
-                    : 'text-gray-500 hover:text-black'
-                }`}
+                className={`px-3 py-2 text-xs font-medium transition-colors ${activeTab === 'curl'
+                  ? 'border-b-2 border-black text-black'
+                  : 'text-gray-500 hover:text-black'
+                  }`}
               >
                 cURL
               </button>
               <button
                 onClick={() => setActiveTab('browser')}
-                className={`px-3 py-2 text-xs font-medium transition-colors ${
-                  activeTab === 'browser'
-                    ? 'border-b-2 border-black text-black'
-                    : 'text-gray-500 hover:text-black'
-                }`}
+                className={`px-3 py-2 text-xs font-medium transition-colors ${activeTab === 'browser'
+                  ? 'border-b-2 border-black text-black'
+                  : 'text-gray-500 hover:text-black'
+                  }`}
               >
                 Browser Console
               </button>
@@ -929,11 +927,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                   <button
                     onClick={executeTest}
                     disabled={isTesting}
-                    className={`px-3 py-1 text-xs border rounded transition-colors flex items-center gap-2 ${
-                      isTesting
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-black text-white hover:bg-gray-800'
-                    }`}
+                    className={`px-3 py-1 text-xs border rounded transition-colors flex items-center gap-2 ${isTesting
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-black text-white hover:bg-gray-800'
+                      }`}
                   >
                     {isTesting ? (
                       <>
@@ -969,7 +966,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                           <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
-                        Copy Command
+                        Copy
                       </>
                     )}
                   </button>
@@ -977,8 +974,8 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                 <pre className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono leading-relaxed flex-grow min-h-[140px]">
                   {curlCommand}
                 </pre>
-                <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy and run in terminal, or click Test to execute from browser</Text>
-                
+                <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy</Text>
+
                 {/* Test Response Display */}
                 {testError && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -993,7 +990,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                     <Text className="text-xs text-red-700">{testError}</Text>
                   </div>
                 )}
-                
+
                 {testResponse && (
                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -1002,11 +999,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                           <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                         <Text className="text-xs font-semibold text-green-800">Response</Text>
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                          testResponse.status < 300 ? 'bg-green-100 text-green-700' :
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${testResponse.status < 300 ? 'bg-green-100 text-green-700' :
                           testResponse.status < 400 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
+                            'bg-red-100 text-red-700'
+                          }`}>
                           {testResponse.status}
                         </span>
                       </div>
@@ -1026,8 +1022,8 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                     <div className="mt-2">
                       <Text className="text-xs font-semibold text-green-700 mb-1">Body:</Text>
                       <pre className="text-xs bg-white p-2 rounded border border-green-200 overflow-x-auto font-mono text-gray-800 max-h-48 overflow-y-auto">
-                        {typeof testResponse.data === 'string' 
-                          ? testResponse.data 
+                        {typeof testResponse.data === 'string'
+                          ? testResponse.data
                           : JSON.stringify(testResponse.data, null, 2)}
                       </pre>
                     </div>
@@ -1040,11 +1036,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                   <button
                     onClick={executeTest}
                     disabled={isTesting}
-                    className={`px-3 py-1 text-xs border rounded transition-colors flex items-center gap-2 ${
-                      isTesting
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-black text-white hover:bg-gray-800'
-                    }`}
+                    className={`px-3 py-1 text-xs border rounded transition-colors flex items-center gap-2 ${isTesting
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-black text-white hover:bg-gray-800'
+                      }`}
                   >
                     {isTesting ? (
                       <>
@@ -1089,7 +1084,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                   {browserConsoleCode}
                 </pre>
                 <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy and paste in browser console, or click Test to execute from browser</Text>
-                
+
                 {/* Test Response Display */}
                 {testError && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -1104,7 +1099,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                     <Text className="text-xs text-red-700">{testError}</Text>
                   </div>
                 )}
-                
+
                 {testResponse && (
                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
@@ -1113,11 +1108,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                           <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                         <Text className="text-xs font-semibold text-green-800">Response</Text>
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                          testResponse.status < 300 ? 'bg-green-100 text-green-700' :
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${testResponse.status < 300 ? 'bg-green-100 text-green-700' :
                           testResponse.status < 400 ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
+                            'bg-red-100 text-red-700'
+                          }`}>
                           {testResponse.status}
                         </span>
                       </div>
@@ -1137,8 +1131,8 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                     <div className="mt-2">
                       <Text className="text-xs font-semibold text-green-700 mb-1">Body:</Text>
                       <pre className="text-xs bg-white p-2 rounded border border-green-200 overflow-x-auto font-mono text-gray-800 max-h-48 overflow-y-auto">
-                        {typeof testResponse.data === 'string' 
-                          ? testResponse.data 
+                        {typeof testResponse.data === 'string'
+                          ? testResponse.data
                           : JSON.stringify(testResponse.data, null, 2)}
                       </pre>
                     </div>
@@ -1154,7 +1148,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
             <Text className="text-sm text-gray-500 mb-6 border-b pb-4">
               Customize what this endpoint returns.
             </Text>
-            
+
             <div className="flex flex-col gap-6">
               <div className="flex gap-4">
                 <div className="flex flex-col gap-1 flex-1">
@@ -1184,7 +1178,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                   </select>
                 </div>
               </div>
-              
+
               <div className="flex flex-col gap-1">
                 <label htmlFor="response-body" className="text-[10px] font-bold uppercase text-gray-400 tracking-wider">Response Body</label>
                 <textarea
@@ -1198,7 +1192,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                   <span className="text-[10px] text-red-500 font-medium mt-1 uppercase">{validationError}</span>
                 )}
               </div>
-              
+
               <button
                 onClick={saveConfig}
                 disabled={isSavingConfig || !!validationError}
@@ -1214,7 +1208,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       <section className="flex flex-col gap-4 mt-8">
         {(!session) && (
           <div id="auth-section" className="bg-gray-50 p-6 border rounded-lg shadow-sm h-full flex justify-end ">
-            
+
             <div className="flex gap-3 md:flex-row sm:flex-col xs:flex-col">
               <button>Please login to view and manage your historical requests.</button>
               {/* GitHub */}
@@ -1223,7 +1217,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                 className="xw-full px-4 py-3 border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-3 bg-white"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                 </svg>
                 <span className="font-medium">Continue with GitHub</span>
               </button>
@@ -1234,10 +1228,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                 className="xw-full px-4 py-3 border rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-3 bg-white"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
                 <span className="font-medium">Continue with Google</span>
               </button>
@@ -1252,7 +1246,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         {requests && requests.length > 0 && filteredRequests.length === 0 && (
           <Text>No requests match the current filters.</Text>
         )}
-        
+
         {paginatedRequests.map((req) => (
           <RequestItem key={req.id} req={req} getMethodColor={getMethodColor} getStatusColor={getStatusColor} copyDataToClipboard={copyDataToClipboard} />
         ))}
@@ -1278,11 +1272,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPageClamped === 1}
-                className={`px-3 py-1 border rounded ${
-                  currentPageClamped === 1
-                    ? 'text-gray-300 border-gray-100 cursor-not-allowed'
-                    : 'hover:bg-gray-50'
-                }`}
+                className={`px-3 py-1 border rounded ${currentPageClamped === 1
+                  ? 'text-gray-300 border-gray-100 cursor-not-allowed'
+                  : 'hover:bg-gray-50'
+                  }`}
               >
                 Previous
               </button>
@@ -1299,11 +1292,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPageClamped === totalPages}
-                className={`px-3 py-1 border rounded ${
-                  currentPageClamped === totalPages
-                    ? 'text-gray-300 border-gray-100 cursor-not-allowed'
-                    : 'hover:bg-gray-50'
-                }`}
+                className={`px-3 py-1 border rounded ${currentPageClamped === totalPages
+                  ? 'text-gray-300 border-gray-100 cursor-not-allowed'
+                  : 'hover:bg-gray-50'
+                  }`}
               >
                 Next
               </button>
