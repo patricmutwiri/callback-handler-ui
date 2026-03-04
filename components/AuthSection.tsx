@@ -1,5 +1,6 @@
 import { Text } from '@vercel/examples-ui'
 import { signIn, signOut, useSession } from 'next-auth/react'
+import Link from 'next/link'
 
 export default function AuthSection() {
   const { data: session, status } = useSession()
@@ -15,7 +16,7 @@ export default function AuthSection() {
   if (session?.user) {
     return (
       <div className="flex flex-col gap-4 p-6 border rounded-lg shadow-sm bg-white/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {session.user.image && (
               <img
@@ -25,16 +26,26 @@ export default function AuthSection() {
               />
             )}
             <div>
-              <Text className="text-sm font-semibold">{session.user.name || session.user.email}</Text>
+              <Text className="text-sm font-semibold">
+                {session.user.name || session.user.email}
+              </Text>
               <Text className="text-xs text-gray-500">{session.user.email}</Text>
             </div>
           </div>
-          <button
-            onClick={() => signOut()}
-            className="px-4 py-2 text-sm border rounded hover:bg-gray-50 transition-colors"
-          >
-            Sign Out
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/dashboard"
+              className="px-4 py-2 text-xs border rounded hover:bg-gray-900 hover:text-white transition-colors whitespace-nowrap"
+            >
+              View Dashboard
+            </Link>
+            <button
+              onClick={() => signOut()}
+              className="px-4 py-2 text-sm border rounded hover:bg-gray-50 transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
     )
