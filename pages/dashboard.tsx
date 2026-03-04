@@ -4,7 +4,6 @@ import { getServerSession } from 'next-auth'
 import { useSession } from 'next-auth/react'
 import Head from 'next/head'
 import Link from 'next/link'
-import React from 'react'
 import useSWR from 'swr'
 import { authOptions } from './api/auth/[...nextauth]'
 
@@ -62,7 +61,7 @@ export default function Dashboard({ host }: DashboardProps) {
   return (
     <>
       <Head>
-        <title>Callback Handler - Your Slugs</title>
+        <title>Callback Handler - My Slugs</title>
         <meta
           name="description"
           content="Dashboard showing your recorded callback handler slugs."
@@ -83,7 +82,7 @@ export default function Dashboard({ host }: DashboardProps) {
       <section className="flex flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <Text variant="h1">Your Slugs</Text>
+            <Text variant="h1">My Slugs</Text>
             <Text className="mt-2 text-sm text-gray-600">
               View the endpoints tied to your account and jump straight into
               their request history.
