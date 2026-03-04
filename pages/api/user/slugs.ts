@@ -34,7 +34,7 @@ export default async function handler(
 
   try {
     const key = `user_slugs:${userId}`
-    const rawSlugs = await kv.smembers<string>(key)
+    const rawSlugs = (await kv.smembers(key)) as unknown
     const cleanedSlugs = Array.isArray(rawSlugs)
       ? rawSlugs.filter(
           (s): s is string => typeof s === 'string' && s.trim().length > 0
