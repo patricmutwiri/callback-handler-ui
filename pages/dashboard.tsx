@@ -11,8 +11,13 @@ interface DashboardProps {
   host: string
 }
 
+interface UserSlug {
+  slug: string
+  createdAt: string | null
+}
+
 interface SlugsResponse {
-  slugs: string[]
+  slugs: UserSlug[]
   error?: string
 }
 
@@ -160,32 +165,52 @@ export default function Dashboard({ host }: DashboardProps) {
 
           {slugs.length > 0 && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {slugs.map((slug) => (
-                <Link
-                  key={slug}
-                  href={`/record/${slug}`}
-                  className="group p-4 border rounded-lg bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <Text className="text-sm font-semibold break-all">
-                      {slug}
-                    </Text>
-                    <span className="inline-flex items-center justify-center rounded-full bg-gray-900 text-white w-6 h-6 text-xs group-hover:bg-black">
-                      →
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-500 break-all">
-                    <span className="uppercase tracking-wide font-semibold text-[10px]">
-                      Endpoint
-                    </span>
-                    <div className="mt-1">
-                      <Code>
-                        {endpointBase}/record/{slug}
-                      </Code>
+              {slugs.map(({ slug, createdAt }) => {
+                let createdLabel = 'Unknown'
+                if (createdAt) {
+                  const d = new Date(createdAt)
+                  if (!Number.isNaN(d.getTime())) {
+                    createdLabel = d.toLocaleString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: '2-digit',
+                    })
+                  }
+                }
+
+                return (
+                  <Link
+                    key={slug}
+                    href={`/record/${slug}`}
+                    className="group p-4 border rounded-lg bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow flex flex-col gap-2"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <Text className="text-sm font-semibold break-all">
+                        {slug}
+                      </Text>
+                      <span className="inline-flex items-center justify-center rounded-full bg-gray-900 text-white w-6 h-6 text-xs group-hover:bg-black">
+                        →
+                      </span>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                    <div className="text-xs text-gray-500 break-all">
+                      <span className="uppercase tracking-wide font-semibold text-[10px]">
+                        Endpoint
+                      </span>
+                      <div className="mt-1">
+                        <Code>
+                          {endpointBase}/record/{slug}
+                        </Code>
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-gray-400 mt-2">
+                      <span className="uppercase tracking-wide font-semibold text-[9px] mr-1">
+                        Created
+                      </span>
+                      <span>{createdLabel}</span>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           )}
         </div>

@@ -3,8 +3,13 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]'
 
+interface UserSlug {
+  slug: string
+  createdAt: string | null
+}
+
 type Data =
-  | { slugs: string[] }
+  | { slugs: UserSlug[] }
   | { error: string }
 
 export default async function handler(
@@ -30,16 +35,54 @@ export default async function handler(
   try {
     const key = `user_slugs:${userId}`
     const rawSlugs = await kv.smembers<string>(key)
-    const slugs = Array.isArray(rawSlugs)
-      ? rawSlugs
-          .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
-          .sort((a, b) => a.localeCompare(b))
+    const cleanedSlugs = Array.isArray(rawSlugs)
+      ? rawSlugs.filter(
+          (s): s is string => typeof s === 'string' && s.trim().length > 0
+        )
       : []
 
-    return res.status(200).json({ slugs })
+    const slugsWithMeta: UserSlug[] = await Promise.all(
+      cleanedSlugs.map(async (slug) => {
+        try {
+          const ownerRaw = await kv.get(`slug:owner:${slug}`)
+          if (!ownerRaw) {
+            return { slug, createdAt: null }
+          }
+
+          let owner: any = ownerRaw
+          if (typeof ownerRaw === 'string') {
+            try {
+              owner = JSON.parse(ownerRaw)
+            } catch {
+              owner = null
+            }
+          }
+
+          const createdAt =
+            owner && typeof owner === 'object' && typeof owner.createdAt === 'string'
+              ? owner.createdAt
+              : null
+
+          return { slug, createdAt }
+        } catch {
+          return { slug, createdAt: null }
+        }
+      })
+    )
+
+    // Sort by newest first when we have dates, otherwise by slug
+    slugsWithMeta.sort((a, b) => {
+      if (a.createdAt && b.createdAt) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      }
+      if (a.createdAt && !b.createdAt) return -1
+      if (!a.createdAt && b.createdAt) return 1
+      return a.slug.localeCompare(b.slug)
+    })
+
+    return res.status(200).json({ slugs: slugsWithMeta })
   } catch (error) {
     console.error('Failed to load user slugs:', error)
     return res.status(500).json({ error: 'Failed to load user slugs' })
   }
 }
-

@@ -189,7 +189,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
                 email: session.user.email ?? null,
                 name: session.user.name ?? null,
                 image: session.user.image ?? null,
-                provider: session.user.provider ?? null
+                provider: session.user.provider ?? null,
+                createdAt: new Date().toISOString(),
               }
               await kv.set(ownerKey, JSON.stringify(ownerData))
               await kv.sadd(`user_slugs:${userId}`, slug)
