@@ -1,0 +1,29 @@
+<svg width="1400" height="840" viewBox="0 0 1400 840" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1400" height="840" fill="#F8FAFC"/>
+  <rect x="55" y="40" width="1290" height="760" rx="28" fill="white" stroke="#CBD5E1" stroke-width="2"/>
+  <rect x="55" y="40" width="1290" height="92" rx="28" fill="#FFFFFF"/>
+  <text x="120" y="95" fill="#0F172A" font-family="Arial, sans-serif" font-size="34" font-weight="700">Callback Handler</text>
+  <rect x="870" y="68" width="170" height="42" rx="21" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="906" y="95" fill="#334155" font-family="Arial, sans-serif" font-size="20">Feature Requests</text>
+  <rect x="1054" y="68" width="130" height="42" rx="21" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="1086" y="95" fill="#334155" font-family="Arial, sans-serif" font-size="20">Support Us</text>
+  <rect x="1198" y="68" width="92" height="42" rx="21" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="1225" y="95" fill="#334155" font-family="Arial, sans-serif" font-size="20">GitHub</text>
+  <text x="110" y="210" fill="#0F172A" font-family="Arial, sans-serif" font-size="58" font-weight="700">Callback Handler</text>
+  <text x="112" y="258" fill="#475569" font-family="Arial, sans-serif" font-size="28">Generate a unique URL to capture HTTP requests and callbacks.</text>
+  <rect x="110" y="330" width="520" height="340" rx="24" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="145" y="390" fill="#0F172A" font-family="Arial, sans-serif" font-size="36" font-weight="700">Sign in</text>
+  <rect x="145" y="440" width="210" height="62" rx="16" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="193" y="480" fill="#0F172A" font-family="Arial, sans-serif" font-size="26">Continue with GitHub</text>
+  <rect x="145" y="524" width="210" height="62" rx="16" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="191" y="564" fill="#0F172A" font-family="Arial, sans-serif" font-size="26">Continue with Google</text>
+  <rect x="690" y="330" width="545" height="340" rx="24" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="725" y="390" fill="#0F172A" font-family="Arial, sans-serif" font-size="36" font-weight="700">Get Started</text>
+  <text x="725" y="450" fill="#334155" font-family="Arial, sans-serif" font-size="26">Generate Slug</text>
+  <rect x="725" y="470" width="375" height="62" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="755" y="510" fill="#64748B" font-family="Arial, sans-serif" font-size="26">e.g. my-webhook</text>
+  <rect x="1115" y="470" width="95" height="62" rx="14" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="1136" y="510" fill="#0F172A" font-family="Arial, sans-serif" font-size="22">Auto Generate</text>
+  <rect x="725" y="580" width="485" height="64" rx="16" fill="#0F172A"/>
+  <text x="880" y="621" fill="white" font-family="Arial, sans-serif" font-size="28" font-weight="700">Start Recording</text>
+</svg>

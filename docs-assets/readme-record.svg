@@ -1,0 +1,31 @@
+<svg width="1400" height="860" viewBox="0 0 1400 860" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1400" height="860" fill="#F8FAFC"/>
+  <rect x="50" y="40" width="1300" height="780" rx="28" fill="white" stroke="#CBD5E1" stroke-width="2"/>
+  <text x="90" y="110" fill="#0F172A" font-family="Arial, sans-serif" font-size="46" font-weight="700">Requests for: ui-demo-0405</text>
+  <text x="92" y="154" fill="#475569" font-family="Arial, sans-serif" font-size="24">Send requests to https://callback-handler-ui.vercel.app/record/ui-demo-0405</text>
+  <rect x="90" y="220" width="560" height="278" rx="24" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="120" y="270" fill="#0F172A" font-family="Arial, sans-serif" font-size="34" font-weight="700">Test Endpoint</text>
+  <rect x="120" y="315" width="500" height="130" rx="18" fill="#0F172A"/>
+  <text x="145" y="356" fill="#E2E8F0" font-family="Menlo, Monaco, monospace" font-size="22">curl -X POST https://callback-handler-ui.vercel.app/record/ui-demo-0405</text>
+  <text x="145" y="392" fill="#E2E8F0" font-family="Menlo, Monaco, monospace" font-size="22">-H "Content-Type: application/json"</text>
+  <text x="145" y="428" fill="#E2E8F0" font-family="Menlo, Monaco, monospace" font-size="22">-d '{"event":"test"}'</text>
+  <rect x="465" y="455" width="155" height="32" rx="16" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="521" y="478" fill="#0F172A" font-family="Arial, sans-serif" font-size="18">Copy</text>
+  <rect x="700" y="220" width="560" height="278" rx="24" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="730" y="270" fill="#0F172A" font-family="Arial, sans-serif" font-size="34" font-weight="700">Response Configuration</text>
+  <text x="730" y="320" fill="#475569" font-family="Arial, sans-serif" font-size="22">Status code</text>
+  <rect x="730" y="338" width="140" height="54" rx="12" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="785" y="372" fill="#0F172A" font-family="Arial, sans-serif" font-size="26">200</text>
+  <text x="900" y="320" fill="#475569" font-family="Arial, sans-serif" font-size="22">Content type</text>
+  <rect x="900" y="338" width="300" height="54" rx="12" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="935" y="372" fill="#0F172A" font-family="Arial, sans-serif" font-size="24">application/json</text>
+  <rect x="730" y="420" width="470" height="95" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="760" y="472" fill="#0F172A" font-family="Menlo, Monaco, monospace" font-size="24">{"success": true}</text>
+  <rect x="90" y="545" width="1170" height="220" rx="24" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="120" y="596" fill="#0F172A" font-family="Arial, sans-serif" font-size="34" font-weight="700">Captured Requests</text>
+  <rect x="120" y="625" width="1110" height="52" rx="12" fill="#F8FAFC" stroke="#CBD5E1"/>
+  <text x="145" y="659" fill="#0F172A" font-family="Arial, sans-serif" font-size="24" font-weight="700">POST</text>
+  <text x="255" y="659" fill="#334155" font-family="Arial, sans-serif" font-size="24">200</text>
+  <text x="345" y="659" fill="#334155" font-family="Arial, sans-serif" font-size="24">Apr 5, 2026, 8:15 PM</text>
+  <text x="855" y="659" fill="#334155" font-family="Arial, sans-serif" font-size="24">IP: 127.0.0.1</text>
+</svg>
