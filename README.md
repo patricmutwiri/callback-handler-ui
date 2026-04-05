@@ -28,7 +28,7 @@ Live service:
 
 ### Request Viewer
 
-![Request viewer overview](docs-assets/readme-record.svg)
+![Request viewer overview](docs-assets/readme-record.png)
 
 ### Dashboard
 

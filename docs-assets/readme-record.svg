@@ -1,31 +1,146 @@
-<svg width="1400" height="860" viewBox="0 0 1400 860" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1400" height="860" fill="#F8FAFC"/>
-  <rect x="50" y="40" width="1300" height="780" rx="28" fill="white" stroke="#CBD5E1" stroke-width="2"/>
-  <text x="90" y="110" fill="#0F172A" font-family="Arial, sans-serif" font-size="46" font-weight="700">Requests for: ui-demo-0405</text>
-  <text x="92" y="154" fill="#475569" font-family="Arial, sans-serif" font-size="24">Send requests to https://callback-handler-ui.vercel.app/record/ui-demo-0405</text>
-  <rect x="90" y="220" width="560" height="278" rx="24" fill="#FFFFFF" stroke="#CBD5E1"/>
-  <text x="120" y="270" fill="#0F172A" font-family="Arial, sans-serif" font-size="34" font-weight="700">Test Endpoint</text>
-  <rect x="120" y="315" width="500" height="130" rx="18" fill="#0F172A"/>
-  <text x="145" y="356" fill="#E2E8F0" font-family="Menlo, Monaco, monospace" font-size="22">curl -X POST https://callback-handler-ui.vercel.app/record/ui-demo-0405</text>
-  <text x="145" y="392" fill="#E2E8F0" font-family="Menlo, Monaco, monospace" font-size="22">-H "Content-Type: application/json"</text>
-  <text x="145" y="428" fill="#E2E8F0" font-family="Menlo, Monaco, monospace" font-size="22">-d '{"event":"test"}'</text>
-  <rect x="465" y="455" width="155" height="32" rx="16" fill="#FFFFFF" stroke="#CBD5E1"/>
-  <text x="521" y="478" fill="#0F172A" font-family="Arial, sans-serif" font-size="18">Copy</text>
-  <rect x="700" y="220" width="560" height="278" rx="24" fill="#FFFFFF" stroke="#CBD5E1"/>
-  <text x="730" y="270" fill="#0F172A" font-family="Arial, sans-serif" font-size="34" font-weight="700">Response Configuration</text>
-  <text x="730" y="320" fill="#475569" font-family="Arial, sans-serif" font-size="22">Status code</text>
-  <rect x="730" y="338" width="140" height="54" rx="12" fill="#F8FAFC" stroke="#CBD5E1"/>
-  <text x="785" y="372" fill="#0F172A" font-family="Arial, sans-serif" font-size="26">200</text>
-  <text x="900" y="320" fill="#475569" font-family="Arial, sans-serif" font-size="22">Content type</text>
-  <rect x="900" y="338" width="300" height="54" rx="12" fill="#F8FAFC" stroke="#CBD5E1"/>
-  <text x="935" y="372" fill="#0F172A" font-family="Arial, sans-serif" font-size="24">application/json</text>
-  <rect x="730" y="420" width="470" height="95" rx="14" fill="#F8FAFC" stroke="#CBD5E1"/>
-  <text x="760" y="472" fill="#0F172A" font-family="Menlo, Monaco, monospace" font-size="24">{"success": true}</text>
-  <rect x="90" y="545" width="1170" height="220" rx="24" fill="#FFFFFF" stroke="#CBD5E1"/>
-  <text x="120" y="596" fill="#0F172A" font-family="Arial, sans-serif" font-size="34" font-weight="700">Captured Requests</text>
-  <rect x="120" y="625" width="1110" height="52" rx="12" fill="#F8FAFC" stroke="#CBD5E1"/>
-  <text x="145" y="659" fill="#0F172A" font-family="Arial, sans-serif" font-size="24" font-weight="700">POST</text>
-  <text x="255" y="659" fill="#334155" font-family="Arial, sans-serif" font-size="24">200</text>
-  <text x="345" y="659" fill="#334155" font-family="Arial, sans-serif" font-size="24">Apr 5, 2026, 8:15 PM</text>
-  <text x="855" y="659" fill="#334155" font-family="Arial, sans-serif" font-size="24">IP: 127.0.0.1</text>
+<svg width="1600" height="980" viewBox="0 0 1600 980" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="recordBg" x1="80" y1="120" x2="1540" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DDF0FF"/>
+      <stop offset="0.45" stop-color="#F2F8FF"/>
+      <stop offset="0.75" stop-color="#F7EEFF"/>
+      <stop offset="1" stop-color="#E5FAFF"/>
+    </linearGradient>
+    <linearGradient id="recordStroke" x1="110" y1="180" x2="1510" y2="900" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9ADCFB" stop-opacity="0.55"/>
+      <stop offset="0.5" stop-color="#D0BAFF" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#B6F4FF" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="980" fill="#F8FAFC"/>
+  <rect x="0" y="0" width="1600" height="84" fill="#FFFFFF"/>
+
+  <g>
+    <rect x="28" y="25" width="18" height="18" rx="3" fill="none" stroke="#1D4ED8" stroke-width="2.6"/>
+    <path d="M35 16V53" stroke="#1D4ED8" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M27 25H56" stroke="#1D4ED8" stroke-width="2.6" stroke-linecap="round"/>
+    <text x="60" y="42" fill="#0F172A" font-family="Arial, sans-serif" font-size="18" font-weight="700">Callback Handler</text>
+  </g>
+
+  <g>
+    <rect x="1254" y="23" width="156" height="36" rx="18" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <path d="M1289 44L1295 38" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+    <path d="M1285 48L1293 40L1301 48L1293 56L1285 57L1285 48Z" stroke="#475569" stroke-width="1.8" stroke-linejoin="round"/>
+    <text x="1308" y="46" fill="#334155" font-family="Arial, sans-serif" font-size="15">Feature Requests</text>
+    <rect x="1420" y="23" width="136" height="36" rx="18" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <path d="M1441 42C1441 39.3 1443.1 37.2 1445.7 37.2C1447.6 37.2 1449.1 38.2 1450 39.8C1450.8 38.2 1452.4 37.2 1454.3 37.2C1456.9 37.2 1459 39.3 1459 42C1459 46.7 1450 51.8 1450 51.8C1450 51.8 1441 46.7 1441 42Z" stroke="#475569" stroke-width="1.8" stroke-linejoin="round"/>
+    <text x="1465" y="46" fill="#334155" font-family="Arial, sans-serif" font-size="15">Support Us</text>
+  </g>
+
+  <rect x="0" y="84" width="1600" height="896" fill="url(#recordBg)"/>
+  <path d="M86 856C222 742 338 582 468 456C618 312 780 228 954 150C1088 90 1242 104 1506 100" stroke="url(#recordStroke)" stroke-width="14" stroke-linecap="round" opacity="0.52"/>
+  <path d="M102 948C298 786 346 598 560 450C784 295 1024 356 1248 186C1328 126 1402 96 1536 88" stroke="url(#recordStroke)" stroke-width="9" stroke-linecap="round" opacity="0.34"/>
+  <path d="M182 300L514 128" stroke="#D8EEFF" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"/>
+  <path d="M1072 212L1340 100" stroke="#D9F7FF" stroke-opacity="0.55" stroke-width="10" stroke-linecap="round"/>
+  <path d="M1110 732L1470 920" stroke="#DDE8FF" stroke-opacity="0.45" stroke-width="9" stroke-linecap="round"/>
+
+  <text x="30" y="120" fill="#2563EB" font-family="Arial, sans-serif" font-size="15">⊕ Create New</text>
+  <text x="30" y="182" fill="#020617" font-family="Arial, sans-serif" font-size="40" font-weight="700">Requests for: easter-eggs-0405</text>
+  <text x="30" y="215" fill="#0F172A" font-family="Arial, sans-serif" font-size="16">Send requests to</text>
+  <text x="145" y="215" fill="#F43F5E" font-family="Menlo, Monaco, monospace" font-size="16">https://callback-handler.vercel.app/record/easter-eggs-0405</text>
+  <text x="600" y="215" fill="#0F172A" font-family="Arial, sans-serif" font-size="16">to see them show up here.</text>
+
+  <text x="30" y="248" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">METHOD</text>
+  <text x="155" y="248" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">STATUS</text>
+  <text x="294" y="248" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">DATE</text>
+  <text x="410" y="248" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">ITEMS PER PAGE</text>
+  <rect x="28" y="258" width="94" height="40" rx="6" fill="#FFFFFF" fill-opacity="0.6"/>
+  <text x="45" y="283" fill="#0F172A" font-family="Arial, sans-serif" font-size="16">All</text>
+  <rect x="152" y="258" width="96" height="40" rx="6" fill="#FFFFFF" fill-opacity="0.6"/>
+  <text x="170" y="283" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="16">e.g. 200</text>
+  <rect x="286" y="258" width="124" height="40" rx="6" fill="#FFFFFF" fill-opacity="0.6"/>
+  <text x="305" y="283" fill="#0F172A" font-family="Arial, sans-serif" font-size="16">mm / dd / yyyy</text>
+  <rect x="432" y="258" width="92" height="40" rx="6" fill="#FFFFFF" fill-opacity="0.6"/>
+  <text x="462" y="283" fill="#0F172A" font-family="Arial, sans-serif" font-size="16">10</text>
+
+  <text x="1385" y="285" fill="#0F172A" font-family="Arial, sans-serif" font-size="14">{} Export JSON</text>
+  <text x="1493" y="285" fill="#0F172A" font-family="Arial, sans-serif" font-size="14">▤ Export CSV</text>
+
+  <rect x="28" y="322" width="752" height="350" rx="14" fill="#FFFFFF" fill-opacity="0.92" stroke="#E2E8F0"/>
+  <text x="52" y="356" fill="#334155" font-family="Arial, sans-serif" font-size="16" font-weight="700">Test Endpoint</text>
+  <text x="52" y="392" fill="#0F172A" font-family="Arial, sans-serif" font-size="16" font-weight="700">cURL</text>
+  <text x="94" y="392" fill="#64748B" font-family="Arial, sans-serif" font-size="14">Browser Console</text>
+  <path d="M52 403H80" stroke="#0F172A" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M52 414H750" stroke="#E2E8F0" stroke-width="2"/>
+  <rect x="650" y="381" width="64" height="24" rx="3" fill="#020617"/>
+  <text x="673" y="397" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="13">▶ Test</text>
+  <rect x="722" y="381" width="58" height="24" rx="3" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="742" y="397" fill="#0F172A" font-family="Arial, sans-serif" font-size="13">Copy</text>
+  <rect x="52" y="429" width="690" height="110" rx="10" fill="#111827"/>
+  <text x="64" y="457" fill="#E5E7EB" font-family="Menlo, Monaco, monospace" font-size="15">curl -v -X POST https://callback-handler.vercel.app/record/easter-eggs-0405 \</text>
+  <text x="72" y="485" fill="#E5E7EB" font-family="Menlo, Monaco, monospace" font-size="15">-H "Content-Type: application/json" \</text>
+  <text x="72" y="513" fill="#E5E7EB" font-family="Menlo, Monaco, monospace" font-size="15">-d '{"foo": "easter", "bar": "eggs"}'</text>
+  <text x="370" y="564" fill="#BFCBDA" font-family="Arial, sans-serif" font-size="14">COPY</text>
+  <rect x="52" y="582" width="690" height="94" rx="8" fill="#F0FFF4" stroke="#BBF7D0"/>
+  <text x="64" y="602" fill="#16A34A" font-family="Arial, sans-serif" font-size="14">✓ Response</text>
+  <rect x="138" y="588" width="48" height="20" rx="4" fill="#DCFCE7"/>
+  <text x="154" y="603" fill="#16A34A" font-family="Arial, sans-serif" font-size="13" font-weight="700">200</text>
+  <text x="64" y="627" fill="#166534" font-family="Arial, sans-serif" font-size="14" font-weight="700">Body:</text>
+  <rect x="64" y="636" width="676" height="46" rx="4" fill="#FFFFFF" stroke="#BBF7D0"/>
+  <text x="76" y="658" fill="#334155" font-family="Menlo, Monaco, monospace" font-size="14">{</text>
+  <text x="76" y="676" fill="#334155" font-family="Menlo, Monaco, monospace" font-size="14">  "success": true</text>
+
+  <rect x="796" y="322" width="754" height="350" rx="14" fill="#FFFFFF" fill-opacity="0.92" stroke="#E2E8F0"/>
+  <text x="820" y="366" fill="#020617" font-family="Arial, sans-serif" font-size="34" font-weight="700">Response Configuration</text>
+  <text x="820" y="400" fill="#94A3B8" font-family="Arial, sans-serif" font-size="14">Customize what this endpoint returns.</text>
+  <path d="M820 418H1534" stroke="#E2E8F0" stroke-width="2"/>
+  <text x="820" y="446" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">STATUS CODE</text>
+  <text x="1060" y="446" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">CONTENT TYPE</text>
+  <rect x="820" y="456" width="238" height="40" rx="4" fill="#FFFFFF"/>
+  <text x="820" y="484" fill="#0F172A" font-family="Arial, sans-serif" font-size="15">200</text>
+  <text x="1040" y="478" fill="#94A3B8" font-family="Arial, sans-serif" font-size="18">▾</text>
+  <rect x="1060" y="456" width="450" height="40" rx="4" fill="#FFFFFF"/>
+  <text x="1060" y="484" fill="#0F172A" font-family="Arial, sans-serif" font-size="15">application/json</text>
+  <text x="1488" y="478" fill="#94A3B8" font-family="Arial, sans-serif" font-size="18">▾</text>
+  <path d="M820 500H1510" stroke="#E2E8F0" stroke-width="1.5"/>
+  <text x="820" y="534" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">RESPONSE BODY</text>
+  <rect x="820" y="548" width="690" height="102" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="832" y="575" fill="#0F172A" font-family="Menlo, Monaco, monospace" font-size="14">{"success": true}</text>
+  <rect x="1402" y="622" width="108" height="28" rx="3" fill="#020617"/>
+  <text x="1420" y="641" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="13" font-weight="700">SAVE CONFIGURATION</text>
+
+  <rect x="28" y="696" width="1522" height="256" rx="10" fill="#FFFFFF" fill-opacity="0.92" stroke="#E2E8F0"/>
+  <rect x="40" y="708" width="48" height="22" rx="4" fill="#DCFCE7"/>
+  <text x="50" y="723" fill="#15803D" font-family="Arial, sans-serif" font-size="13" font-weight="700">POST</text>
+  <text x="98" y="723" fill="#94A3B8" font-family="Arial, sans-serif" font-size="14">08b657d3</text>
+  <text x="170" y="723" fill="#475569" font-family="Arial, sans-serif" font-size="14">Apr 5, 2026, 10:49 PM</text>
+  <text x="1450" y="723" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">IP: 149.22.82.2</text>
+  <path d="M40 744H1530" stroke="#E2E8F0" stroke-width="1.5"/>
+  <text x="40" y="772" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">HEADERS</text>
+  <text x="540" y="772" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">REQUEST PAYLOAD</text>
+  <text x="1040" y="772" fill="#94A3B8" font-family="Arial, sans-serif" font-size="12" font-weight="700">MOCK RESPONSE</text>
+  <text x="50" y="803" fill="#475569" font-family="Menlo, Monaco, monospace" font-size="14">SEC-FETCH-SITE: same-origin</text>
+  <text x="50" y="830" fill="#475569" font-family="Menlo, Monaco, monospace" font-size="14">X-VERCEL-IP-CONTINENT: NA</text>
+  <text x="50" y="857" fill="#475569" font-family="Menlo, Monaco, monospace" font-size="14">X-REAL-IP: 149.22.82.2</text>
+  <text x="50" y="884" fill="#475569" font-family="Menlo, Monaco, monospace" font-size="14">X-FORWARDED-PROTO: https</text>
+  <rect x="540" y="790" width="420" height="110" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="556" y="824" fill="#475569" font-family="Menlo, Monaco, monospace" font-size="14">{</text>
+  <text x="572" y="850" fill="#475569" font-family="Menlo, Monaco, monospace" font-size="14">"foo": "easter",</text>
+  <text x="572" y="876" fill="#475569" font-family="Menlo, Monaco, monospace" font-size="14">"bar": "eggs"</text>
+  <rect x="1040" y="790" width="470" height="110" rx="6" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="1056" y="820" fill="#475569" font-family="Arial, sans-serif" font-size="13" font-weight="700">STATUS:</text>
+  <rect x="1098" y="807" width="42" height="18" rx="4" fill="#DCFCE7"/>
+  <text x="1111" y="820" fill="#15803D" font-family="Arial, sans-serif" font-size="12" font-weight="700">200</text>
+  <text x="1056" y="850" fill="#475569" font-family="Arial, sans-serif" font-size="13" font-weight="700">BODY:</text>
+  <text x="1064" y="879" fill="#475569" font-family="Menlo, Monaco, monospace" font-size="14">{"success": true}</text>
+
+  <text x="30" y="915" fill="#64748B" font-family="Arial, sans-serif" font-size="13">Showing 1 - 1 of 1 requests</text>
+  <text x="1412" y="915" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">Previous</text>
+  <text x="1474" y="915" fill="#475569" font-family="Arial, sans-serif" font-size="13">Page 1 of 1</text>
+  <text x="1540" y="915" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">Next</text>
+
+  <rect x="0" y="944" width="1600" height="36" fill="#FFFFFF"/>
+  <text x="620" y="966" fill="#64748B" font-family="Arial, sans-serif" font-size="13">Privacy Policy</text>
+  <text x="704" y="966" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">•</text>
+  <text x="720" y="966" fill="#64748B" font-family="Arial, sans-serif" font-size="13">Support Us</text>
+  <text x="802" y="966" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">•</text>
+  <text x="818" y="966" fill="#64748B" font-family="Arial, sans-serif" font-size="13">Feature Requests</text>
+  <text x="934" y="966" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">•</text>
+  <text x="950" y="966" fill="#64748B" font-family="Arial, sans-serif" font-size="13">GitHub Repository</text>
 </svg>
