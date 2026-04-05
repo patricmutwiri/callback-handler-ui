@@ -100,8 +100,8 @@ export default function Home() {
           Inspect headers, body, and more in real-time.
         </Text>
 
-        <div className="mx-auto mt-2 flex max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 text-center shadow-sm backdrop-blur-sm sm:flex-row sm:justify-between sm:text-left">
-          <div>
+        <div className="mx-auto mt-2 flex w-full max-w-5xl flex-col gap-4 rounded-2xl border border-slate-200 bg-white/80 px-6 py-5 text-center shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:text-left">
+          <div className="max-w-3xl">
             <Text className="text-sm font-semibold text-slate-900">
               Have an idea for Callback Handler?
             </Text>
@@ -111,7 +111,7 @@ export default function Home() {
           </div>
           <Link
             href="/feature-requests"
-            className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-black"
+            className="inline-flex shrink-0 items-center justify-center rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-black whitespace-nowrap"
           >
             Open Feature Requests
           </Link>
