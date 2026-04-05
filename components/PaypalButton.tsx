@@ -1,10 +1,4 @@
-import Script from 'next/script'
-
-declare global {
-  interface Window {
-    paypal: any
-  }
-}
+import Link from 'next/link'
 
 export default function PaypalButton() {
   return (
@@ -15,7 +9,7 @@ export default function PaypalButton() {
             <div>
               <h3 className="text-sm font-semibold tracking-tight text-slate-900">Support Callback Handler</h3>
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                If this endpoint saved you time, you can chip in for the project.
+                If this endpoint saved you time, you can chip in for the project from our hosted support page.
               </p>
             </div>
             <span className="rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[11px] font-medium text-amber-900">
@@ -23,21 +17,18 @@ export default function PaypalButton() {
             </span>
           </div>
 
-          <div className="flex justify-center">
-            <div className="relative z-10 min-h-[44px] w-full max-w-[270px]">
-            <div id="paypal-container-G54BFVLVSBVKS"></div>
-            <Script
-              src="https://www.paypal.com/sdk/js?client-id=BAA7SXiQaL-A_jp8ePUhCXzT7knA0nUA_tjULut3dWzqiKog27dgaIrk-qW-x3IVPUl2zrJ5rnOxHblPiA&components=hosted-buttons&disable-funding=venmo&currency=USD"
-              onLoad={() => {
-                if (window.paypal) {
-                  window.paypal.HostedButtons({
-                    hostedButtonId: "G54BFVLVSBVKS",
-                  }).render("#paypal-container-G54BFVLVSBVKS")
-                }
-              }}
-            />
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-slate-900">Hosted PayPal checkout</p>
+              <p className="mt-1 text-xs text-slate-500">Open the dedicated support page and continue from there.</p>
+            </div>
+            <Link
+              href="/support"
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-black"
+            >
+              Support Us
+            </Link>
           </div>
-        </div>
         </div>
       </div>
     </footer>

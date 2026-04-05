@@ -49,6 +49,10 @@ export default function Layout({ children }: LayoutProps) {
               Privacy Policy
             </Link>
             <span className="hidden sm:inline">•</span>
+            <Link href="/support" className="hover:text-black transition-colors">
+              Support Us
+            </Link>
+            <span className="hidden sm:inline">•</span>
             <Link href="/feature-requests" className="hover:text-black transition-colors">
               Feature Requests
             </Link>
