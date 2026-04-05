@@ -8,6 +8,7 @@
 import { kv } from '@vercel/kv'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
+import { parseAdminEmails } from '../../../lib/admin-monitoring.mjs'
 import { authOptions } from '../auth/[...nextauth]'
 
 interface AdminUsageRequest {
@@ -41,13 +42,6 @@ type Data =
       recentRequests: AdminUsageRequest[]
     }
   | { error: string }
-
-const parseAdminEmails = () => {
-  return (process.env.ADMIN_EMAILS || '')
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean)
-}
 
 export default async function handler(
   req: NextApiRequest,

@@ -6,6 +6,10 @@ import { authOptions } from '../auth/[...nextauth]'
 interface UserSlug {
   slug: string
   createdAt: string | null
+  deletionRequestedAt: string | null
+  deletionEligibleAfter: string | null
+  deletionStatus: 'pending' | 'none'
+  deletionReason: string | null
 }
 
 type Data =
@@ -45,8 +49,28 @@ export default async function handler(
       cleanedSlugs.map(async (slug) => {
         try {
           const ownerRaw = await kv.get(`slug:owner:${slug}`)
+          const deletionRaw = await kv.get(`slug:deletion:${slug}`)
+          let deletion = null
+
+          if (typeof deletionRaw === 'string') {
+            try {
+              deletion = JSON.parse(deletionRaw)
+            } catch {
+              deletion = null
+            }
+          } else {
+            deletion = deletionRaw
+          }
+
           if (!ownerRaw) {
-            return { slug, createdAt: null }
+            return {
+              slug,
+              createdAt: null,
+              deletionRequestedAt: deletion?.requestedAt ?? null,
+              deletionEligibleAfter: deletion?.eligibleAfter ?? null,
+              deletionStatus: deletion?.status === 'pending' ? 'pending' : 'none',
+              deletionReason: deletion?.reason ?? null,
+            }
           }
 
           let owner: any = ownerRaw
@@ -63,9 +87,23 @@ export default async function handler(
               ? owner.createdAt
               : null
 
-          return { slug, createdAt }
+          return {
+            slug,
+            createdAt,
+            deletionRequestedAt: deletion?.requestedAt ?? null,
+            deletionEligibleAfter: deletion?.eligibleAfter ?? null,
+            deletionStatus: deletion?.status === 'pending' ? 'pending' : 'none',
+            deletionReason: deletion?.reason ?? null,
+          }
         } catch {
-          return { slug, createdAt: null }
+          return {
+            slug,
+            createdAt: null,
+            deletionRequestedAt: null,
+            deletionEligibleAfter: null,
+            deletionStatus: 'none',
+            deletionReason: null,
+          }
         }
       })
     )

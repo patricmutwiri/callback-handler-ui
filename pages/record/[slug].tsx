@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { signIn, useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { getGuestRequestViewLimit } from '../../lib/slug-access.mjs'
+import { publishAdminAlert } from '../../lib/admin-monitoring.mjs'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
 import Pusher from 'pusher-js'
@@ -194,6 +195,17 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
             }
 
             await Promise.all(work)
+
+            await publishAdminAlert({
+              type: 'request-logged',
+              slug,
+              message: `${requestData.method} request logged for ${slug}.`,
+              metadata: {
+                requestId: requestData.id,
+                responseStatus: requestData.responseStatus ?? 200,
+                accessType: hasAuthenticatedOwner ? 'authenticated' : 'guest',
+              },
+            })
           } catch (e) {
             console.error('Non-fatal stats/expire failure', e)
           }
