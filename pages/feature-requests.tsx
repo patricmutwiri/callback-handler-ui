@@ -79,7 +79,7 @@ export default function FeatureRequestsPage() {
         }}
       />
 
-      <section className="mx-auto flex max-w-4xl flex-col gap-6">
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Text variant="h1">Feature Requests</Text>
@@ -108,14 +108,14 @@ export default function FeatureRequestsPage() {
           </Link>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white/88 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-8">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(280px,0.65fr)]">
+        <div className="rounded-3xl border border-slate-200 bg-white/88 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-8 lg:p-10">
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,0.95fr)_minmax(520px,1.05fr)] xl:items-start">
             <div>
               <Text variant="h2">Tell us what to build next</Text>
-              <Text className="mt-3 text-sm leading-6 text-slate-600">
+              <Text className="mt-3 max-w-xl text-sm leading-7 text-slate-600">
                 Your request is saved in an admin-only backend queue, mirrored into GitHub for implementation tracking, and tied to your email address only for status updates.
               </Text>
-              <div className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/90 p-4 text-sm text-slate-600">
+              <div className="mt-6 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/90 p-5 text-sm text-slate-600">
                 <div>
                   <Text className="font-semibold text-slate-900">What happens next</Text>
                 </div>
@@ -131,7 +131,7 @@ export default function FeatureRequestsPage() {
               </div>
             </div>
 
-            <form onSubmit={handleFeatureRequestSubmit} className="grid gap-4">
+            <form onSubmit={handleFeatureRequestSubmit} className="grid gap-5">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
                   <label htmlFor="requesterName" className="text-sm font-medium text-slate-700">
@@ -204,15 +204,15 @@ export default function FeatureRequestsPage() {
                       description: event.target.value,
                     }))
                   }
-                  rows={7}
+                  rows={8}
                   className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 outline-none transition-colors focus:border-slate-400"
                   placeholder="Describe the use case, expected behavior, and anything that would make the feature especially useful."
                   required
                 />
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Text className="text-xs leading-5 text-slate-500">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <Text className="max-w-md text-xs leading-5 text-slate-500">
                   Please avoid secrets or production credentials in feature requests.
                 </Text>
                 <button
