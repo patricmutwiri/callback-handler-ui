@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { useSession } from 'next-auth/react'
 import Head from 'next/head'
 import Link from 'next/link'
+import { useState } from 'react'
 import useSWR from 'swr'
 import { authOptions } from './api/auth/[...nextauth]'
 
@@ -41,11 +42,18 @@ interface AdminUsageRequest {
 
 interface AdminUsageResponse {
   stats: AdminUsageStats
+  pagination: {
+    page: number
+    pageSize: number
+    totalItems: number
+    totalPages: number
+  }
   recentRequests: AdminUsageRequest[]
   error?: string
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const ADMIN_USAGE_PAGE_SIZE = 10
 
 export const getServerSideProps: GetServerSideProps<DashboardProps> = async ({
   req,
@@ -71,6 +79,7 @@ export const getServerSideProps: GetServerSideProps<DashboardProps> = async ({
 
 export default function Dashboard({ host }: DashboardProps) {
   const { data: session, status } = useSession()
+  const [adminUsagePage, setAdminUsagePage] = useState(1)
   const { data, error, isLoading } = useSWR<SlugsResponse>(
     '/api/user/slugs',
     fetcher,
@@ -80,7 +89,9 @@ export default function Dashboard({ host }: DashboardProps) {
     }
   )
   const { data: adminUsage } = useSWR<AdminUsageResponse>(
-    status === 'authenticated' ? '/api/admin/usage' : null,
+    status === 'authenticated'
+      ? `/api/admin/usage?page=${adminUsagePage}&pageSize=${ADMIN_USAGE_PAGE_SIZE}`
+      : null,
     fetcher,
     {
       revalidateOnFocus: false,
@@ -92,6 +103,15 @@ export default function Dashboard({ host }: DashboardProps) {
   const slugs = data?.slugs ?? []
   const adminStats = adminUsage?.stats
   const recentRequests = adminUsage?.recentRequests ?? []
+  const adminPagination = adminUsage?.pagination
+  const adminPage = adminPagination?.page ?? 1
+  const adminPageSize = adminPagination?.pageSize ?? ADMIN_USAGE_PAGE_SIZE
+  const adminTotalPages = adminPagination?.totalPages ?? 1
+  const adminTotalItems = adminPagination?.totalItems ?? 0
+  const adminRangeStart = adminTotalItems === 0 ? 0 : (adminPage - 1) * adminPageSize + 1
+  const adminRangeEnd = adminTotalItems === 0
+    ? 0
+    : Math.min(adminPage * adminPageSize, adminTotalItems)
 
   const endpointBase =
     typeof window !== 'undefined'
@@ -206,8 +226,36 @@ export default function Dashboard({ host }: DashboardProps) {
             </div>
 
             <div className="border rounded-lg overflow-hidden">
-              <div className="px-4 py-3 border-b bg-gray-50">
-                <Text className="text-sm font-semibold">Recent Request Activity</Text>
+              <div className="flex flex-col gap-3 border-b bg-gray-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <Text className="text-sm font-semibold">Recent Request Activity</Text>
+                  <Text className="mt-1 text-xs text-gray-500">
+                    Showing {adminRangeStart}-{adminRangeEnd} of {adminTotalItems}
+                  </Text>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setAdminUsagePage((currentPage) => Math.max(1, currentPage - 1))}
+                    disabled={adminPage <= 1}
+                    className="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <div className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600">
+                    Page {adminPage} of {adminTotalPages}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAdminUsagePage((currentPage) => Math.min(adminTotalPages, currentPage + 1))
+                    }
+                    disabled={adminPage >= adminTotalPages}
+                    className="inline-flex items-center rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
               {recentRequests.length === 0 ? (
                 <div className="px-4 py-6 text-sm text-gray-500">

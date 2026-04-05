@@ -21,6 +21,9 @@ interface AdminUsageRequest {
   ownerEmail?: string | null
 }
 
+const DEFAULT_PAGE_SIZE = 10
+const MAX_PAGE_SIZE = 50
+
 type Data =
   | {
       stats: {
@@ -28,6 +31,12 @@ type Data =
         guestRequests: number
         authenticatedRequests: number
         uniqueSlugs: number
+      }
+      pagination: {
+        page: number
+        pageSize: number
+        totalItems: number
+        totalPages: number
       }
       recentRequests: AdminUsageRequest[]
     }
@@ -56,15 +65,27 @@ export default async function handler(
     return res.status(403).json({ error: 'Forbidden' })
   }
 
+  const page = Math.max(1, Number.parseInt(String(req.query.page || '1'), 10) || 1)
+  const requestedPageSize =
+    Number.parseInt(String(req.query.pageSize || DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, requestedPageSize))
+  const start = (page - 1) * pageSize
+  const end = start + pageSize - 1
+
   try {
     const [rawRecentRequests, totalRequests, guestRequests, authenticatedRequests, uniqueSlugs] =
       await Promise.all([
-        kv.lrange('admin:requests', 0, 24),
+        kv.lrange('admin:requests', start, end),
         kv.get<number>('stats:requests:all-time'),
         kv.get<number>('stats:requests:guest'),
         kv.get<number>('stats:requests:authenticated'),
         kv.scard('all_slugs'),
       ])
+
+    const normalizedTotalRequests = Number(totalRequests || 0)
+    const totalPages = normalizedTotalRequests > 0
+      ? Math.ceil(normalizedTotalRequests / pageSize)
+      : 1
 
     const recentRequests = (Array.isArray(rawRecentRequests) ? rawRecentRequests : [])
       .map((item) => {
@@ -84,10 +105,16 @@ export default async function handler(
 
     return res.status(200).json({
       stats: {
-        totalRequests: Number(totalRequests || 0),
+        totalRequests: normalizedTotalRequests,
         guestRequests: Number(guestRequests || 0),
         authenticatedRequests: Number(authenticatedRequests || 0),
         uniqueSlugs: Number(uniqueSlugs || 0),
+      },
+      pagination: {
+        page: Math.min(page, totalPages),
+        pageSize,
+        totalItems: normalizedTotalRequests,
+        totalPages,
       },
       recentRequests,
     })
