@@ -11,6 +11,7 @@ import assert from 'node:assert/strict'
 import {
   canAccessSlugConfig,
   getRecordAccessDecision,
+  getGuestRequestViewLimit,
   hasSlugCookieAccess,
   isSlugOwner,
   parseCookies,
@@ -24,9 +25,17 @@ test('parseCookies decodes simple cookie headers', () => {
   })
 })
 
+test('parseCookies preserves equals signs in cookie values', () => {
+  assert.deepEqual(parseCookies('token=abc=123==; slug_creator_demo=1'), {
+    token: 'abc=123==',
+    slug_creator_demo: '1',
+  })
+})
+
 test('hasSlugCookieAccess detects the browser ownership cookie', () => {
   assert.equal(hasSlugCookieAccess('foo=bar; slug_creator_demo=1', 'demo'), true)
   assert.equal(hasSlugCookieAccess('foo=bar', 'demo'), false)
+  assert.equal(hasSlugCookieAccess('slug_creator_other=1', 'demo'), false)
 })
 
 test('readOwnerRecord parses string and object records', () => {
@@ -157,4 +166,35 @@ test('getRecordAccessDecision rejects signed-in non-owners and missing owners wi
     }),
     { authorized: false, status: 403, via: 'session' }
   )
+})
+
+test('getRecordAccessDecision ignores guest cookies for a different slug', () => {
+  assert.deepEqual(
+    getRecordAccessDecision({
+      slug: 'demo',
+      cookieHeader: 'slug_creator_other=1',
+      sessionUser: null,
+      owner: null,
+    }),
+    { authorized: false, status: 401, via: 'none' }
+  )
+})
+
+test('getGuestRequestViewLimit falls back to 5 for invalid values', () => {
+  const originalValue = process.env.GUEST_REQUEST_VIEW_LIMIT
+
+  process.env.GUEST_REQUEST_VIEW_LIMIT = '0'
+  assert.equal(getGuestRequestViewLimit(), 5)
+
+  process.env.GUEST_REQUEST_VIEW_LIMIT = 'abc'
+  assert.equal(getGuestRequestViewLimit(), 5)
+
+  process.env.GUEST_REQUEST_VIEW_LIMIT = '12'
+  assert.equal(getGuestRequestViewLimit(), 12)
+
+  if (originalValue === undefined) {
+    delete process.env.GUEST_REQUEST_VIEW_LIMIT
+  } else {
+    process.env.GUEST_REQUEST_VIEW_LIMIT = originalValue
+  }
 })

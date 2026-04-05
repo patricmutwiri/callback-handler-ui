@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { Text } from '@vercel/examples-ui'
 import { signIn, signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
@@ -19,10 +20,13 @@ export default function AuthSection() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {session.user.image && (
-              <img
+              <Image
                 src={session.user.image}
                 alt={session.user.name || 'User'}
-                className="w-10 h-10 rounded-full"
+                width={40}
+                height={40}
+                unoptimized
+                className="h-10 w-10 rounded-full object-cover"
               />
             )}
             <div>

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { ReactNode } from 'react'
 
@@ -13,7 +14,14 @@ export default function Layout({ children }: LayoutProps) {
         <div className="max-w-[90vw] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex min-h-[68px] flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
             <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <img src="/logo.png" alt="Callback Handler" className="w-20 h-20" />
+              <Image
+                src="/logo.png"
+                alt="Callback Handler"
+                width={80}
+                height={80}
+                priority
+                className="h-20 w-20"
+              />
               <span className="font-semibold text-lg">Callback Handler</span>
             </Link>
 

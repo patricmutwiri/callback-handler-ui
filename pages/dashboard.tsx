@@ -3,6 +3,7 @@ import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth'
 import { useSession } from 'next-auth/react'
 import Head from 'next/head'
+import Image from 'next/image'
 import Link from 'next/link'
 import Pusher from 'pusher-js'
 import { useEffect, useState } from 'react'
@@ -413,10 +414,13 @@ export default function Dashboard({ host }: DashboardProps) {
         {status === 'authenticated' && session?.user && (
           <div className="flex items-center gap-3 p-4 border rounded-lg bg-white/80 backdrop-blur-sm shadow-sm">
             {session.user.image && (
-              <img
+              <Image
                 src={session.user.image}
                 alt={session.user.name || 'User'}
-                className="w-9 h-9 rounded-full"
+                width={36}
+                height={36}
+                unoptimized
+                className="h-9 w-9 rounded-full object-cover"
               />
             )}
             <div>
