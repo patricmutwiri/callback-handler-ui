@@ -69,13 +69,6 @@ export default function SupportPage() {
               <Text className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
                 If Callback Handler saves you time during debugging or webhook work, you can support maintenance and future improvements through PayPal.
               </Text>
-
-              <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50/90 p-5">
-                <Text className="text-sm font-semibold text-slate-900">Why it opens externally</Text>
-                <Text className="mt-2 text-sm leading-6 text-slate-600">
-                  We now send support traffic directly to the hosted PayPal page instead of embedding the payment UI in-app. That keeps this page faster, cleaner, and easier to maintain.
-                </Text>
-              </div>
             </div>
 
             <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-slate-50 p-5 shadow-sm">
@@ -86,7 +79,7 @@ export default function SupportPage() {
                 </span>
               </div>
               <Text className="mt-3 text-sm leading-6 text-slate-600">
-                Open the secure PayPal page in a new tab and complete support there.
+                Open the secure PayPal page in a new tab and complete your support there.
               </Text>
 
               <a
