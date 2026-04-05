@@ -26,9 +26,26 @@ interface Props {
   slug: string
   requests: RequestData[]
   host: string
+  initialProtocol: string
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+const parseRequestPreviewBody = (contentType: string, body: string) => {
+  if (!body) {
+    return null
+  }
+
+  if (contentType === 'application/json') {
+    try {
+      return JSON.parse(body)
+    } catch {
+      return body
+    }
+  }
+
+  return body
+}
 
 async function getBody(req: any) {
   if (req.body) return req.body
@@ -214,6 +231,12 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         slug,
         requests,
         host: req.headers.host || 'localhost:3000',
+        initialProtocol:
+          typeof req.headers['x-forwarded-proto'] === 'string'
+            ? `${req.headers['x-forwarded-proto']}:`
+            : (req.headers.host || '').includes('localhost')
+              ? 'http:'
+              : 'https:',
       },
     }
   } catch (error) {
@@ -223,6 +246,12 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         slug,
         requests: [],
         host: req.headers.host || 'localhost:3000',
+        initialProtocol:
+          typeof req.headers['x-forwarded-proto'] === 'string'
+            ? `${req.headers['x-forwarded-proto']}:`
+            : (req.headers.host || '').includes('localhost')
+              ? 'http:'
+              : 'https:',
       },
     }
   }
@@ -234,7 +263,7 @@ interface ResponseConfig {
   contentType: string
 }
 
-export default function RecordPage({ slug, requests: initialRequests = [], host }: Props) {
+export default function RecordPage({ slug, requests: initialRequests = [], host, initialProtocol }: Props) {
   const [copied, setCopied] = useState(false)
   const [copiedBrowser, setCopiedBrowser] = useState(false)
   const [activeTab, setActiveTab] = useState<'curl' | 'browser'>('curl')
@@ -243,7 +272,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   const [isTesting, setIsTesting] = useState(false)
   const [testResponse, setTestResponse] = useState<{ status: number; data: any; headers: Record<string, string> } | null>(null)
   const [testError, setTestError] = useState<string | null>(null)
-  const [protocol, setProtocol] = useState<string>('https:') // Default to https: for SSR
+  const [protocol, setProtocol] = useState<string>(initialProtocol)
   const [methodFilter, setMethodFilter] = useState<string>('ALL')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [dateFilter, setDateFilter] = useState<string>('') // yyyy-mm-dd
@@ -582,7 +611,38 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         headers: responseHeaders
       })
 
-      mutateRequests()
+      const previewRequest: RequestData = {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        method: activeSnippetRequest.method,
+        headers: testRequestAllowsBody
+          ? { 'content-type': activeSnippetRequest.contentType }
+          : {},
+        body: testRequestAllowsBody
+          ? parseRequestPreviewBody(activeSnippetRequest.contentType, activeSnippetRequest.body)
+          : null,
+        query: { slug },
+        ip: 'local-test',
+        responseStatus: response.status,
+        responseBody: responseData,
+      }
+
+      mutateRequests((current) => {
+        const safeCurrent = Array.isArray(current) ? current : []
+        const alreadyPresent = safeCurrent.some((item) => {
+          return (
+            item.timestamp === previewRequest.timestamp &&
+            item.method === previewRequest.method &&
+            JSON.stringify(item.body) === JSON.stringify(previewRequest.body)
+          )
+        })
+
+        if (alreadyPresent) {
+          return safeCurrent
+        }
+
+        return [previewRequest, ...safeCurrent]
+      }, false)
     } catch (error: any) {
       setTestError(error.message || 'Failed to execute test request')
     } finally {
