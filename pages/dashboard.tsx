@@ -273,7 +273,7 @@ export default function Dashboard({ host }: DashboardProps) {
                         </Text>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span>{request.responseStatus ?? 200}</span>
+                        <span>{request.id ?? 200}</span>
                         <span>{new Date(request.timestamp).toLocaleString()}</span>
                       </div>
                     </div>
