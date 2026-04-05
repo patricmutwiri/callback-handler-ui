@@ -146,7 +146,10 @@ async function pollForCapturedRequest() {
 
     assert(response.ok, 'Failed to read recorded requests.', text)
 
-    if (Array.isArray(json) && json.some((entry) => entry?.body?.event === 'integration-smoke')) {
+    if (
+      Array.isArray(json?.requests) &&
+      json.requests.some((entry) => entry?.body?.event === 'integration-smoke')
+    ) {
       return json
     }
 
@@ -235,23 +238,28 @@ async function main() {
     assert(savedConfig.response.ok, 'Failed to save custom config.', savedConfig.text)
     assert(savedConfig.json?.config?.status === 202, 'Saved config did not preserve the expected status.', savedConfig.text)
 
-    console.log('7. Posting a webhook payload...')
-    const webhookResponse = await fetchWithExpectation(`/record/${SLUG}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        event: 'integration-smoke',
-        ok: true,
-      }),
-    })
-    assert(webhookResponse.response.status === 202, 'Webhook request did not return the configured 202 status.', webhookResponse.text)
-    assert(webhookResponse.json?.accepted === true, 'Webhook response body did not match the configured payload.', webhookResponse.text)
+    console.log('7. Posting webhook payloads...')
+    for (let index = 0; index < 6; index += 1) {
+      const webhookResponse = await fetchWithExpectation(`/record/${SLUG}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event: 'integration-smoke',
+          ok: true,
+          index,
+        }),
+      })
+      assert(webhookResponse.response.status === 202, 'Webhook request did not return the configured 202 status.', webhookResponse.text)
+      assert(webhookResponse.json?.accepted === true, 'Webhook response body did not match the configured payload.', webhookResponse.text)
+    }
 
     console.log('8. Verifying the webhook was persisted...')
     const capturedRequests = await pollForCapturedRequest()
-    assert(capturedRequests.length > 0, 'Record API returned no captured requests.')
+    assert(capturedRequests.requests.length === 5, 'Guest record API should expose only the 5 most recent requests.')
+    assert(capturedRequests.requiresLogin === true, 'Guest record API should require login when more than 5 requests exist.')
+    assert(capturedRequests.guestVisibleLimit === 5, 'Guest record API should report the configured guest visibility limit.')
 
     console.log('9. Verifying authorized config reads still work...')
     const authorizedConfig = await fetchWithExpectation(`/api/config/${SLUG}`, {

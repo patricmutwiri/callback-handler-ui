@@ -1,7 +1,7 @@
 import { kv } from '@vercel/kv'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
-import { getRecordAccessDecision, readOwnerRecord } from '../../../lib/slug-access.mjs'
+import { getGuestRequestViewLimit, getRecordAccessDecision, readOwnerRecord } from '../../../lib/slug-access.mjs'
 import { authOptions } from '../auth/[...nextauth]'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -48,8 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Forbidden: Access denied to slug' })
     }
 
-    // get the last 50 requests
-    const rawRequests = await kv.lrange(key, 0, 49) || []
+    const guestLimit = getGuestRequestViewLimit()
+    const fetchEnd = access.via === 'cookie' ? guestLimit : 49
+    const rawRequests = await kv.lrange(key, 0, fetchEnd) || []
     const requests = rawRequests.map((req) => {
       try {
         return typeof req === 'string' ? JSON.parse(req) : req
@@ -59,7 +60,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }).filter(Boolean)
 
-    return res.status(200).json(requests)
+    if (access.via === 'cookie') {
+      const visibleRequests = requests.slice(0, guestLimit)
+      const requiresLogin = requests.length > guestLimit
+
+      return res.status(200).json({
+        requests: visibleRequests,
+        requiresLogin,
+        guestVisibleLimit: guestLimit,
+      })
+    }
+
+    return res.status(200).json({
+      requests,
+      requiresLogin: false,
+      guestVisibleLimit: guestLimit,
+    })
   } catch (error) {
     console.error('Failed to retrieve requests:', error)
     return res.status(500).json({ error: 'Failed to retrieve requests' })

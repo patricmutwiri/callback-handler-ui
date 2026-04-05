@@ -4,6 +4,7 @@ import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth'
 import { signIn, useSession } from 'next-auth/react'
 import Head from 'next/head'
+import { getGuestRequestViewLimit } from '../../lib/slug-access.mjs'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
 import Pusher from 'pusher-js'
@@ -27,6 +28,14 @@ interface Props {
   requests: RequestData[]
   host: string
   initialProtocol: string
+  requiresLoginForMore: boolean
+  guestVisibleLimit: number
+}
+
+interface RequestsResponse {
+  requests: RequestData[]
+  requiresLogin: boolean
+  guestVisibleLimit: number
 }
 
 const GUEST_SLUG_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
@@ -101,6 +110,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
   const accept = (req.headers.accept || '') as string
   const isNextData = Boolean(req.headers['x-nextjs-data'])
   const isBrowserRequest = (req.method === 'GET' && accept.includes('text/html')) || isNextData
+  const guestVisibleLimit = getGuestRequestViewLimit()
 
   // Check if slug is active
   const isActive = await kv.get(activeKey)
@@ -285,12 +295,15 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       }
     })()
 
-    const rawRequests = await kv.lrange(key, 0, 49) || []
-    const requests = (rawRequests as any[]).map((item) => {
+    const fetchEnd = session?.user ? 49 : guestVisibleLimit
+    const rawRequests = await kv.lrange(key, 0, fetchEnd) || []
+    const parsedRequests = (rawRequests as any[]).map((item) => {
       if (!item) return null
       if (typeof item === 'object') return item as RequestData
       try { return JSON.parse(item as string) } catch { return null }
     }).filter(Boolean) as RequestData[]
+    const requiresLoginForMore = !session?.user && parsedRequests.length > guestVisibleLimit
+    const requests = session?.user ? parsedRequests : parsedRequests.slice(0, guestVisibleLimit)
 
     return {
       props: {
@@ -303,6 +316,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
             : (req.headers.host || '').includes('localhost')
               ? 'http:'
               : 'https:',
+        requiresLoginForMore,
+        guestVisibleLimit,
       },
     }
   } catch (error) {
@@ -318,6 +333,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
             : (req.headers.host || '').includes('localhost')
               ? 'http:'
               : 'https:',
+        requiresLoginForMore: false,
+        guestVisibleLimit,
       },
     }
   }
@@ -329,7 +346,14 @@ interface ResponseConfig {
   contentType: string
 }
 
-export default function RecordPage({ slug, requests: initialRequests = [], host, initialProtocol }: Props) {
+export default function RecordPage({
+  slug,
+  requests: initialRequests = [],
+  host,
+  initialProtocol,
+  requiresLoginForMore: initialRequiresLoginForMore,
+  guestVisibleLimit,
+}: Props) {
   const [copied, setCopied] = useState(false)
   const [copiedBrowser, setCopiedBrowser] = useState(false)
   const [activeTab, setActiveTab] = useState<'curl' | 'browser'>('curl')
@@ -435,17 +459,23 @@ export default function RecordPage({ slug, requests: initialRequests = [], host,
     setValidationError(validateBody(localConfig.contentType, newBody))
   }, [localConfig.contentType])
 
-  const { data: requests = initialRequests, mutate: mutateRequests } = useSWR<RequestData[]>(
+  const { data: requestsResponse, mutate: mutateRequests } = useSWR<RequestsResponse>(
     `/api/record/${slug}`,
     fetcher,
     {
-      fallbackData: initialRequests,
+      fallbackData: {
+        requests: initialRequests,
+        requiresLogin: initialRequiresLoginForMore,
+        guestVisibleLimit,
+      },
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 5000,
       refreshInterval: 180000,
     }
   )
+  const requests = requestsResponse?.requests ?? initialRequests
+  const requiresLoginForMore = requestsResponse?.requiresLogin ?? initialRequiresLoginForMore
 
   const { data: session } = useSession()
 
@@ -719,7 +749,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host,
       }
 
       mutateRequests((current) => {
-        const safeCurrent = Array.isArray(current) ? current : []
+        const safeCurrent = Array.isArray(current?.requests) ? current.requests : []
         const alreadyPresent = safeCurrent.some((item) => {
           return (
             item.timestamp === previewRequest.timestamp &&
@@ -729,10 +759,18 @@ export default function RecordPage({ slug, requests: initialRequests = [], host,
         })
 
         if (alreadyPresent) {
-          return safeCurrent
+          return current ?? {
+            requests: safeCurrent,
+            requiresLogin: initialRequiresLoginForMore,
+            guestVisibleLimit,
+          }
         }
 
-        return [previewRequest, ...safeCurrent]
+        return {
+          requests: [previewRequest, ...safeCurrent],
+          requiresLogin: current?.requiresLogin ?? initialRequiresLoginForMore,
+          guestVisibleLimit: current?.guestVisibleLimit ?? guestVisibleLimit,
+        }
       }, false)
     } catch (error: any) {
       setTestError(error.message || 'Failed to execute test request')
@@ -1415,6 +1453,17 @@ export default function RecordPage({ slug, requests: initialRequests = [], host,
                 <span className="font-medium">Continue with Google</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {!session && requiresLoginForMore && (
+          <div className="p-4 border border-amber-200 bg-amber-50 rounded-lg text-sm text-amber-900">
+            <Text className="font-semibold">
+              Showing the {guestVisibleLimit} most recent requests for guests.
+            </Text>
+            <Text className="mt-1">
+              Sign in to view the full request and response history for this endpoint.
+            </Text>
           </div>
         )}
 
