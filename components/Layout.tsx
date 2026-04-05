@@ -49,6 +49,10 @@ export default function Layout({ children }: LayoutProps) {
               Privacy Policy
             </Link>
             <span className="hidden sm:inline">•</span>
+            <Link href="/feature-requests" className="hover:text-black transition-colors">
+              Feature Requests
+            </Link>
+            <span className="hidden sm:inline">•</span>
             <a
               href="https://github.com/patricmutwiri/callback-handler-ui"
               target="_blank"

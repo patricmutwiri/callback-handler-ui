@@ -1,6 +1,7 @@
 import AuthSection from '@/components/AuthSection'
 import { Code, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
 
@@ -10,14 +11,6 @@ export default function Home() {
   const router = useRouter()
   const [title, setTitle] = useState<string>('')
   const [loading, setLoading] = useState(false)
-  const [featureRequest, setFeatureRequest] = useState({
-    requesterName: '',
-    requesterEmail: '',
-    title: '',
-    description: '',
-  })
-  const [featureSubmitting, setFeatureSubmitting] = useState(false)
-  const [featureFeedback, setFeatureFeedback] = useState<string | null>(null)
 
   // User-input slugs
   const createSlug = (value: string) => {
@@ -75,44 +68,6 @@ export default function Home() {
     }
   }
 
-  const handleFeatureRequestSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setFeatureSubmitting(true)
-    setFeatureFeedback(null)
-
-    try {
-      const response = await fetch('/api/feature-requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(featureRequest),
-      })
-
-      const payload = await response.json()
-
-      if (!response.ok) {
-        throw new Error(payload.error || 'Failed to submit feature request')
-      }
-
-      setFeatureFeedback(
-        payload.request.githubIssueNumber
-          ? `Feature request submitted as GitHub issue #${payload.request.githubIssueNumber}.`
-          : 'Feature request submitted successfully.'
-      )
-      setFeatureRequest({
-        requesterName: '',
-        requesterEmail: '',
-        title: '',
-        description: '',
-      })
-    } catch (requestError: any) {
-      setFeatureFeedback(requestError.message || 'Failed to submit feature request')
-    } finally {
-      setFeatureSubmitting(false)
-    }
-  }
-
   return (
     <>
       <Head>
@@ -144,6 +99,23 @@ export default function Home() {
           Generate a unique URL to capture HTTP requests and callbacks. 
           Inspect headers, body, and more in real-time.
         </Text>
+
+        <div className="mx-auto mt-2 flex max-w-2xl flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 text-center shadow-sm backdrop-blur-sm sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <Text className="text-sm font-semibold text-slate-900">
+              Have an idea for Callback Handler?
+            </Text>
+            <Text className="mt-1 text-sm text-slate-600">
+              Send a feature request without cluttering your workflow. We open a GitHub issue and keep you posted.
+            </Text>
+          </div>
+          <Link
+            href="/feature-requests"
+            className="inline-flex items-center rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-black"
+          >
+            Open Feature Requests
+          </Link>
+        </div>
         
 
         {/* Side by side layout */}
@@ -201,112 +173,6 @@ export default function Home() {
             {loading ? 'Redirecting...' : 'Start Recording'}
           </button>
         </form>
-        </div>
-
-        <div className="mx-auto mt-4 w-full max-w-3xl rounded-2xl border border-slate-200 bg-white/85 p-6 text-left shadow-sm backdrop-blur-sm">
-          <div className="flex flex-col gap-2 text-center sm:text-left">
-            <Text variant="h2">Feature Request</Text>
-            <Text className="text-sm text-gray-600">
-              Tell us what you want next. We will create a GitHub issue automatically and use your email for status updates when the request closes.
-            </Text>
-          </div>
-
-          <form onSubmit={handleFeatureRequestSubmit} className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <label htmlFor="requesterName" className="text-sm font-medium text-gray-700">
-                Your name
-              </label>
-              <input
-                id="requesterName"
-                type="text"
-                value={featureRequest.requesterName}
-                onChange={(event) =>
-                  setFeatureRequest((current) => ({
-                    ...current,
-                    requesterName: event.target.value,
-                  }))
-                }
-                className="rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label htmlFor="requesterEmail" className="text-sm font-medium text-gray-700">
-                Email for updates
-              </label>
-              <input
-                id="requesterEmail"
-                type="email"
-                value={featureRequest.requesterEmail}
-                onChange={(event) =>
-                  setFeatureRequest((current) => ({
-                    ...current,
-                    requesterEmail: event.target.value,
-                  }))
-                }
-                className="rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-2 md:col-span-2">
-              <label htmlFor="featureTitle" className="text-sm font-medium text-gray-700">
-                Feature title
-              </label>
-              <input
-                id="featureTitle"
-                type="text"
-                value={featureRequest.title}
-                onChange={(event) =>
-                  setFeatureRequest((current) => ({
-                    ...current,
-                    title: event.target.value,
-                  }))
-                }
-                className="rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="e.g. Slack webhook templates"
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-2 md:col-span-2">
-              <label htmlFor="featureDescription" className="text-sm font-medium text-gray-700">
-                What problem should this solve?
-              </label>
-              <textarea
-                id="featureDescription"
-                value={featureRequest.description}
-                onChange={(event) =>
-                  setFeatureRequest((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-                rows={5}
-                className="rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-                placeholder="Describe the use case, expected behavior, and anything that would make the feature especially useful."
-                required
-              />
-            </div>
-            <div className="md:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <Text className="text-xs text-gray-500">
-                Admins can review and respond from the dashboard. You will get an email update when the related GitHub issue is closed.
-              </Text>
-              <button
-                type="submit"
-                disabled={featureSubmitting}
-                className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-white transition-colors ${
-                  featureSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800'
-                }`}
-              >
-                {featureSubmitting ? 'Submitting...' : 'Submit feature request'}
-              </button>
-            </div>
-          </form>
-
-          {featureFeedback && (
-            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-              {featureFeedback}
-            </div>
-          )}
         </div>
       </section>
     </>
