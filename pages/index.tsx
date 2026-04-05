@@ -116,6 +116,23 @@ export default function Home() {
             Open Feature Requests
           </Link>
         </div>
+
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-2xl border border-slate-200 bg-white/80 px-6 py-5 text-center shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:text-left">
+          <div className="max-w-3xl">
+            <Text className="text-sm font-semibold text-slate-900">
+              Want to support Callback Handler?
+            </Text>
+            <Text className="mt-1 text-sm text-slate-600">
+              Help keep the project maintained and improving through the hosted support page.
+            </Text>
+          </div>
+          <Link
+            href="/support"
+            className="inline-flex shrink-0 items-center justify-center rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-black whitespace-nowrap"
+          >
+            Support Us
+          </Link>
+        </div>
         
 
         {/* Side by side layout */}
