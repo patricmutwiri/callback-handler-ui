@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { ReactNode } from 'react'
-import PaypalButton from './PaypalButton'
 
 interface LayoutProps {
   children: ReactNode
@@ -38,9 +37,6 @@ export default function Layout({ children }: LayoutProps) {
         {children}
       </main>
 
-      {/* Footer */}
-      <PaypalButton />
-      
       {/* Footer Links */}
       <footer className="border-t border-gray-200 bg-white py-4">
         <div className="max-w-[90vw] mx-auto px-4 sm:px-6 lg:px-8">
