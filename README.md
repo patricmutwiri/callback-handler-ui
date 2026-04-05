@@ -30,9 +30,9 @@ Live service:
 
 ![Request viewer overview](docs-assets/readme-record.png)
 
-### Dashboard
+### Support
 
-![Dashboard overview](docs-assets/readme-dashboard.png)
+![Support overview](docs-assets/readme-support.png)
 
 ### Feature Requests
 
