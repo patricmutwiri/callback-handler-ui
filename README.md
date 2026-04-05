@@ -476,3 +476,5 @@ Callback Handler is built to make request debugging simple:
 - repeat until your integration works
 
 That makes it a fast tool for day-to-day webhook and callback troubleshooting.
+
+Made with ❤️ for us by us.
