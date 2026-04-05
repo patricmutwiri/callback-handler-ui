@@ -6,11 +6,13 @@
  */
 
 import { Text } from '@vercel/examples-ui'
+import { useSession } from 'next-auth/react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useState } from 'react'
 
 export default function FeatureRequestsPage() {
+  const { data: session, status } = useSession()
   const [featureRequest, setFeatureRequest] = useState({
     requesterName: '',
     requesterEmail: '',
@@ -58,6 +60,8 @@ export default function FeatureRequestsPage() {
     }
   }
 
+  const canTrackRequests = status === 'authenticated' && Boolean(session?.user?.email)
+
   return (
     <>
       <Head>
@@ -87,25 +91,35 @@ export default function FeatureRequestsPage() {
               Share what would make Callback Handler more useful for your workflow. We will open a GitHub issue automatically and email you when the request is closed.
             </Text>
           </div>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-black"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="flex flex-wrap items-center gap-3">
+            {canTrackRequests && (
+              <Link
+                href="/my-feature-requests"
+                className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-black"
+              >
+                Track my requests
+              </Link>
+            )}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-black"
             >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Back to home
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Back to home
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white/88 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-8 lg:p-10">

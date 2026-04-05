@@ -83,6 +83,15 @@ export default async function handler(
     ])
     await kv.lpush('feature_requests:index', storedRequest.id)
     await kv.ltrim('feature_requests:index', 0, 499)
+    await kv.lpush(
+      `feature_requests:user:${storedRequest.requesterEmail.toLowerCase()}`,
+      storedRequest.id
+    )
+    await kv.ltrim(
+      `feature_requests:user:${storedRequest.requesterEmail.toLowerCase()}`,
+      0,
+      199
+    )
 
     return res.status(201).json({
       request: {

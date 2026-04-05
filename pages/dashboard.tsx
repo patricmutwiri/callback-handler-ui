@@ -388,6 +388,21 @@ export default function Dashboard({ host }: DashboardProps) {
           </Link>
         </div>
 
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/feature-requests"
+            className="inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:text-black"
+          >
+            Submit Feature Request
+          </Link>
+          <Link
+            href="/my-feature-requests"
+            className="inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:text-black"
+          >
+            Track My Feature Requests
+          </Link>
+        </div>
+
         {status === 'loading' && (
           <div className="flex items-center justify-center py-16">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black" />
