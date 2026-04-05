@@ -24,7 +24,7 @@ Live service:
 
 ### Home
 
-![Homepage overview](docs-assets/readme-home.svg)
+![Homepage overview](docs-assets/readme-home.png)
 
 ### Request Viewer
 
@@ -32,11 +32,11 @@ Live service:
 
 ### Dashboard
 
-![Dashboard overview](docs-assets/readme-dashboard.svg)
+![Dashboard overview](docs-assets/readme-dashboard.png)
 
 ### Feature Requests
 
-![Feature requests overview](docs-assets/readme-feature-requests.svg)
+![Feature requests overview](docs-assets/readme-feature-requests.png)
 
 ## How To Use The Service
 
