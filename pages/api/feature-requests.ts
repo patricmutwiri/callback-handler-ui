@@ -9,6 +9,7 @@ import { kv } from '@vercel/kv'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { publishAdminAlert } from '../../lib/admin-monitoring.mjs'
 import { buildFeatureRequestRecord, createGithubIssueForFeatureRequest, validateFeatureRequestInput } from '../../lib/feature-requests.mjs'
+import { verifyTurnstileToken } from '../../lib/turnstile.mjs'
 
 type Data =
   | {
@@ -37,6 +38,8 @@ export default async function handler(
     typeof req.body?.requesterName === 'string' ? req.body.requesterName.trim() : ''
   const requesterEmail =
     typeof req.body?.requesterEmail === 'string' ? req.body.requesterEmail.trim() : ''
+  const turnstileToken =
+    typeof req.body?.turnstileToken === 'string' ? req.body.turnstileToken.trim() : ''
 
   const validationError = validateFeatureRequestInput({
     title,
@@ -47,6 +50,24 @@ export default async function handler(
 
   if (validationError) {
     return res.status(400).json({ error: validationError })
+  }
+
+  const forwardedFor = req.headers['x-forwarded-for']
+  const remoteIp =
+    typeof forwardedFor === 'string'
+      ? forwardedFor.split(',')[0]?.trim()
+      : req.socket.remoteAddress ?? undefined
+
+  const turnstileCheck = await verifyTurnstileToken({
+    token: turnstileToken,
+    remoteIp,
+    action: 'feature_request',
+  })
+
+  if (!turnstileCheck.success) {
+    return res
+      .status(400)
+      .json({ error: turnstileCheck.error || 'CAPTCHA verification failed.' })
   }
 
   try {

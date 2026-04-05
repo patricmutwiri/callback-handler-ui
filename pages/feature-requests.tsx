@@ -6,10 +6,12 @@
  */
 
 import { Text } from '@vercel/examples-ui'
+import TurnstileWidget from '@/components/TurnstileWidget'
+import { getTurnstileSiteKey } from '@/lib/turnstile.mjs'
 import { useSession } from 'next-auth/react'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { absoluteUrl, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 export default function FeatureRequestsPage() {
@@ -22,9 +24,22 @@ export default function FeatureRequestsPage() {
   })
   const [featureSubmitting, setFeatureSubmitting] = useState(false)
   const [featureFeedback, setFeatureFeedback] = useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
+
+  const turnstileSiteKey = getTurnstileSiteKey()
+  const handleTurnstileTokenChange = useCallback((token: string | null) => {
+    setTurnstileToken(token)
+  }, [])
 
   const handleFeatureRequestSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+
+    if (!turnstileToken) {
+      setFeatureFeedback('Please complete the CAPTCHA challenge before submitting.')
+      return
+    }
+
     setFeatureSubmitting(true)
     setFeatureFeedback(null)
 
@@ -34,7 +49,10 @@ export default function FeatureRequestsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(featureRequest),
+        body: JSON.stringify({
+          ...featureRequest,
+          turnstileToken,
+        }),
       })
 
       const payload = await response.json()
@@ -54,8 +72,12 @@ export default function FeatureRequestsPage() {
         title: '',
         description: '',
       })
+      setTurnstileToken(null)
+      setTurnstileResetKey((current) => current + 1)
     } catch (requestError: any) {
       setFeatureFeedback(requestError.message || 'Failed to submit feature request')
+      setTurnstileToken(null)
+      setTurnstileResetKey((current) => current + 1)
     } finally {
       setFeatureSubmitting(false)
     }
@@ -242,14 +264,32 @@ export default function FeatureRequestsPage() {
               </div>
 
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <Text className="max-w-md text-xs leading-5 text-slate-500">
-                  Please avoid secrets or production credentials in feature requests.
-                </Text>
+                <div className="max-w-md">
+                  <Text className="text-xs leading-5 text-slate-500">
+                    Please avoid secrets or production credentials in feature requests.
+                  </Text>
+                  {turnstileSiteKey ? (
+                    <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                      <TurnstileWidget
+                        action="feature_request"
+                        onTokenChange={handleTurnstileTokenChange}
+                        resetKey={turnstileResetKey}
+                        siteKey={turnstileSiteKey}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-800">
+                      CAPTCHA is not configured for this environment.
+                    </div>
+                  )}
+                </div>
                 <button
                   type="submit"
-                  disabled={featureSubmitting}
+                  disabled={featureSubmitting || !turnstileSiteKey}
                   className={`inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-medium text-white transition-colors ${
-                    featureSubmitting ? 'bg-slate-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-black'
+                    featureSubmitting || !turnstileSiteKey
+                      ? 'bg-slate-400 cursor-not-allowed'
+                      : 'bg-slate-900 hover:bg-black'
                   }`}
                 >
                   {featureSubmitting ? 'Submitting...' : 'Submit feature request'}
