@@ -1,25 +1,11 @@
 import { kv } from '@vercel/kv'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
+import { getRecordAccessDecision, readOwnerRecord } from '../../../lib/slug-access.mjs'
 import { authOptions } from '../auth/[...nextauth]'
-
-// parse the cookies from the request
-const parseCookies = (cookieHeader?: string): Record<string, string> => {
-  const cookies: Record<string, string> = {}
-  if (!cookieHeader) return cookies
-  for (const part of cookieHeader.split(';')) {
-    const [rawName, ...rawVal] = part.split('=')
-    const name = rawName?.trim()
-    if (!name) continue
-    const val = rawVal.join('=').trim()
-    cookies[name] = decodeURIComponent(val)
-  }
-  return cookies
-}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { slug } = req.query
-  let override = false
   if (!slug || typeof slug !== 'string') {
     return res.status(400).json({ error: 'Slug is required' })
   }
@@ -27,22 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const key = `requests:${slug}`
 
   try {
-    // Read session; require it for this endpoint (only owner may access)
     const session = await getServerSession(req, res, authOptions)
 
-    if (!session?.user) {
-      console.warn('Unauthorized: No session found in the request.')
-      // check if the slug was created in this browser
-      const cookies = parseCookies(req.headers.cookie)
-      const slugCreator = cookies[`slug_creator_${slug}`]
-      if (!slugCreator) {
-        return res.status(401).json({ error: 'Unauthorized: Access denied to slug' })
-      } else {
-        override = true
-      }
-    }
-
-    // Read the owner record for this slug
     const ownerKey = `slug:owner:${slug}`
     let ownerRaw = null
     try {
@@ -52,38 +24,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to verify ownership' })
     }
 
-    if (!ownerRaw && !override) {
-      // No owner recorded -> deny access
-      return res.status(403).json({ error: 'Forbidden: Access denied to slug' })
-    }
-
-    // ownerRaw might be a JSON string or object
-    let owner: { id?: string | null; email?: string | null } | null = null
+    let owner = null
     try {
-      owner = typeof ownerRaw === 'string' ? JSON.parse(ownerRaw) : (ownerRaw as any)
+      owner = readOwnerRecord(ownerRaw)
     } catch (parseErr) {
       console.error('Failed to parse owner record:', parseErr)
       return res.status(500).json({ error: 'Failed to verify ownership' })
     }
 
-    const sessionId = session?.user?.id ?? null
-    const sessionEmail = session?.user?.email ?? null
+    const access = getRecordAccessDecision({
+      slug,
+      cookieHeader: req.headers.cookie,
+      sessionUser: session?.user ?? null,
+      owner,
+    })
 
-    const ownerId = owner?.id ?? null
-    const ownerEmail = owner?.email ?? null
+    if (!access.authorized) {
+      if (access.status === 401) {
+        console.warn('Unauthorized: No session found in the request.')
+        return res.status(401).json({ error: 'Unauthorized: Access denied to slug' })
+      }
 
-    // Compare owner vs session. Prefer id if present, else compare emails (case-insensitive).
-    let isOwner = false
-    if (ownerId && sessionId && String(ownerId) === String(sessionId)) {
-      isOwner = true
-    } else if (ownerEmail && sessionEmail && String(ownerEmail).toLowerCase() === String(sessionEmail).toLowerCase()) {
-      isOwner = true
-    }
-
-    if (!isOwner && !override) {
       return res.status(403).json({ error: 'Forbidden: Access denied to slug' })
     }
-    
+
     // get the last 50 requests
     const rawRequests = await kv.lrange(key, 0, 49) || []
     const requests = rawRequests.map((req) => {

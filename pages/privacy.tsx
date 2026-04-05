@@ -44,7 +44,7 @@ export default function PrivacyPolicy() {
           <section>
             <Text variant="h2">1. Introduction</Text>
             <Text>
-              Callback Handler ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our webhook testing and callback inspection service.
+              Callback Handler (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our webhook testing and callback inspection service.
             </Text>
           </section>
 
@@ -93,12 +93,12 @@ export default function PrivacyPolicy() {
               Your data is stored using Vercel KV (Redis) infrastructure. We retain:
             </Text>
             <ul className="list-disc pl-6 space-y-1 mt-2">
-              <li>Captured HTTP requests for up to 30 days</li>
+              <li>Captured HTTP requests for up to 1 year</li>
               <li>User account information while your account is active</li>
               <li>Only the last 100 requests per webhook endpoint</li>
             </ul>
             <Text className="mt-2">
-              Data older than 30 days is automatically deleted. You can delete your data at any time by removing your webhook endpoints.
+              Data older than 1 year is automatically deleted. You can delete your data at any time by removing your webhook endpoints.
             </Text>
           </section>
 
@@ -111,7 +111,7 @@ export default function PrivacyPolicy() {
 
             <Text className="font-semibold mb-2 mt-4">5.2 Pusher</Text>
             <Text>
-              We use Pusher for real-time updates. Pusher may collect technical information about your connection. Please review Pusher's privacy policy for more information.
+              We use Pusher for real-time updates. Pusher may collect technical information about your connection. Please review Pusher&apos;s privacy policy for more information.
             </Text>
 
             <Text className="font-semibold mb-2 mt-4">5.3 Vercel</Text>
@@ -149,7 +149,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <Text variant="h2">9. Children's Privacy</Text>
+            <Text variant="h2">9. Children&apos;s Privacy</Text>
             <Text>
               Our service is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13. If you believe we have collected information from a child under 13, please contact us immediately.
             </Text>
@@ -158,7 +158,7 @@ export default function PrivacyPolicy() {
           <section>
             <Text variant="h2">10. Changes to This Privacy Policy</Text>
             <Text>
-              We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.
+              We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the &quot;Last updated&quot; date. You are advised to review this Privacy Policy periodically for any changes.
             </Text>
           </section>
 

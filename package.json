@@ -1,13 +1,15 @@
 {
-  "name": "cron",
-  "repository": "https://github.com/vercel/examples.git",
+  "name": "callback-handler-ui",
+  "repository": "https://github.com/patricmutwiri/callback-handler-ui",
   "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "test:auth": "node --test ./tests/auth-access.test.mjs",
+    "test:integration": "node ./scripts/integration-smoke.mjs",
     "postinstall": "patch-package"
   },
   "dependencies": {

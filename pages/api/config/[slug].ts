@@ -1,5 +1,8 @@
 import { kv } from '@vercel/kv'
 import { NextApiRequest, NextApiResponse } from 'next'
+import { getServerSession } from 'next-auth'
+import { canAccessSlugConfig, readOwnerRecord } from '../../../lib/slug-access.mjs'
+import { authOptions } from '../auth/[...nextauth]'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { slug } = req.query
@@ -8,6 +11,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const key = `config:${slug}`
+
+  const session = await getServerSession(req, res, authOptions)
+  const ownerRaw = await kv.get(`slug:owner:${slug}`)
+  const owner = readOwnerRecord(ownerRaw)
+  const hasAccess = canAccessSlugConfig({
+    slug,
+    cookieHeader: req.headers.cookie,
+    sessionUser: session?.user ?? null,
+    owner,
+  })
+
+  if (!hasAccess) {
+    return res.status(403).json({ error: 'Forbidden: Access denied to slug configuration' })
+  }
 
   if (req.method === 'GET') {
     try {

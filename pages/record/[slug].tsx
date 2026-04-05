@@ -254,6 +254,8 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     body: '{"success": true}',
     contentType: 'application/json'
   })
+  const [curlEditorValue, setCurlEditorValue] = useState<string>('')
+  const [browserEditorValue, setBrowserEditorValue] = useState<string>('')
 
   const validateBody = (contentType: string, body: string): string | null => {
     if (!body) return null
@@ -284,7 +286,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     return null
   }
 
-  const getTemplate = (contentType: string) => {
+  const getTemplate = useCallback((contentType: string) => {
     if (contentType === 'application/json') {
       return JSON.stringify({
         success: true,
@@ -302,7 +304,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
 </soapenv:Envelope>`
     }
     return ""
-  }
+  }, [host, slug])
 
   const onContentTypeChange = useCallback((newType: string) => {
     const error = validateBody(newType, localConfig.body)
@@ -316,7 +318,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       }
     }
     setLocalConfig((prev) => ({ ...prev, contentType: newType }))
-  }, [localConfig.body])
+  }, [getTemplate, localConfig.body])
 
   const onBodyChange = useCallback((newBody: string) => {
     setLocalConfig((prev) => ({ ...prev, body: newBody }))
@@ -458,52 +460,15 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     }
   }
 
-  const curlCommand = useMemo(() => {
-    const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
-    const contentType = localConfig.contentType || 'application/json'
+  const defaultCurlCommand = useMemo(() => {
     const baseUrl = `${protocol}//${host}/record/${slug}`
-
-    if (isXml) {
-      return String.raw`curl -v -X POST ${baseUrl} \
-  -H "Content-Type: ${contentType}" \
-  -d '<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
-   <soapenv:Header/>
-   <soapenv:Body>
-      <web:Request>Test</web:Request>
-   </soapenv:Body>
-</soapenv:Envelope>'`
-    }
-
     return String.raw`curl -v -X POST ${baseUrl} \
   -H "Content-Type: application/json" \
   -d '{"test": "data", "source": "callback-handler"}'`
-  }, [host, slug, localConfig.contentType, protocol])
+  }, [host, protocol, slug])
 
-  const browserConsoleCode = useMemo(() => {
-    const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
-    const contentType = localConfig.contentType || 'application/json'
+  const defaultBrowserConsoleCode = useMemo(() => {
     const url = `${protocol}//${host}/record/${slug}`
-
-    if (isXml) {
-      return `fetch('${url}', {
-  method: 'POST',
-  headers: {
-    'Content-Type': '${contentType}'
-  },
-  body: \`<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
-   <soapenv:Header/>
-   <soapenv:Body>
-      <web:Request>Test</web:Request>
-   </soapenv:Body>
-</soapenv:Envelope>\`
-})
-  .then(response => response.text())
-  .then(data => console.log('Response:', data))
-  .catch(error => console.error('Error:', error));`
-    }
-
     return `fetch('${url}', {
   method: 'POST',
   headers: {
@@ -514,24 +479,64 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     source: 'callback-handler'
   })
 })
-  .then(response => response.json())
+  .then(response => response.text())
   .then(data => console.log('Response:', data))
   .catch(error => console.error('Error:', error));`
-  }, [host, slug, localConfig.contentType, protocol])
+  }, [host, protocol, slug])
 
-  const copyToClipboard = useCallback(() => {
-    if (typeof navigator === 'undefined' || !navigator.clipboard) return
-    navigator.clipboard.writeText(curlCommand)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [curlCommand])
+  useEffect(() => {
+    setCurlEditorValue((current) => current.trim() ? current : defaultCurlCommand)
+  }, [defaultCurlCommand])
 
-  const copyBrowserCodeToClipboard = useCallback(() => {
-    if (typeof navigator === 'undefined' || !navigator.clipboard) return
-    navigator.clipboard.writeText(browserConsoleCode)
-    setCopiedBrowser(true)
-    setTimeout(() => setCopiedBrowser(false), 2000)
-  }, [browserConsoleCode])
+  useEffect(() => {
+    setBrowserEditorValue((current) => current.trim() ? current : defaultBrowserConsoleCode)
+  }, [defaultBrowserConsoleCode])
+
+  const parseCurlSnippet = useCallback((snippet: string) => {
+    const methodMatch = snippet.match(/-X\s+([A-Z]+)/i)
+    const contentTypeMatch = snippet.match(/Content-Type:\s*([^\s"'\\]+)/i)
+    const bodyMatch = snippet.match(/-d\s+(['"])([\s\S]*)\1\s*$/)
+    const method = methodMatch?.[1]?.toUpperCase() || 'GET'
+    const contentType = contentTypeMatch?.[1] || 'application/json'
+    const body = bodyMatch?.[2] ?? ''
+
+    return {
+      method,
+      contentType,
+      body,
+    }
+  }, [])
+
+  const parseBrowserSnippet = useCallback((snippet: string) => {
+    const methodMatch = snippet.match(/method:\s*['"`]([A-Z]+)['"`]/i)
+    const contentTypeMatch = snippet.match(/Content-Type['"`]?\s*:\s*['"`]([^'"`]+)['"`]/i)
+    const templateBodyMatch = snippet.match(/body:\s*`([\s\S]*?)`/i)
+    const jsonBodyMatch = snippet.match(/body:\s*JSON\.stringify\(([\s\S]*?)\)\s*\n?\}/i)
+
+    return {
+      method: methodMatch?.[1]?.toUpperCase() || 'GET',
+      contentType: contentTypeMatch?.[1] || 'application/json',
+      body: templateBodyMatch?.[1] ?? jsonBodyMatch?.[1]?.trim() ?? '',
+    }
+  }, [])
+
+  const activeSnippetValue = activeTab === 'curl' ? curlEditorValue : browserEditorValue
+
+  const activeSnippetRequest = useMemo(() => {
+    return activeTab === 'curl'
+      ? parseCurlSnippet(curlEditorValue)
+      : parseBrowserSnippet(browserEditorValue)
+  }, [activeTab, browserEditorValue, curlEditorValue, parseBrowserSnippet, parseCurlSnippet])
+
+  const testRequestAllowsBody = activeSnippetRequest.method !== 'GET' && activeSnippetRequest.method !== 'HEAD'
+
+  const testRequestError = useMemo(() => {
+    if (!testRequestAllowsBody) {
+      return null
+    }
+
+    return validateBody(activeSnippetRequest.contentType, activeSnippetRequest.body)
+  }, [activeSnippetRequest.body, activeSnippetRequest.contentType, testRequestAllowsBody])
 
   const executeTest = async () => {
     setIsTesting(true)
@@ -539,33 +544,24 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     setTestResponse(null)
 
     try {
-      const isXml = localConfig.contentType === 'application/xml' || localConfig.contentType === 'application/soap+xml'
-      const contentType = localConfig.contentType || 'application/json'
-      const url = `${protocol}//${host}/record/${slug}`
-
-      let body: string
-      if (isXml) {
-        body = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.example.com/">
-   <soapenv:Header/>
-   <soapenv:Body>
-      <web:Request>Test</web:Request>
-   </soapenv:Body>
-</soapenv:Envelope>`
-      } else {
-        body = JSON.stringify({
-          test: 'data',
-          source: 'callback-handler'
-        })
+      if (testRequestError) {
+        setTestError(testRequestError)
+        return
       }
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': contentType
-        },
-        body
-      })
+      const url = `${protocol}//${host}/record/${slug}`
+      const requestInit: RequestInit = {
+        method: activeSnippetRequest.method,
+      }
+
+      if (testRequestAllowsBody) {
+        requestInit.headers = {
+          'Content-Type': activeSnippetRequest.contentType
+        }
+        requestInit.body = activeSnippetRequest.body
+      }
+
+      const response = await fetch(url, requestInit)
 
       const responseHeaders: Record<string, string> = {}
       response.headers.forEach((value, key) => {
@@ -586,7 +582,6 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
         headers: responseHeaders
       })
 
-      // Refresh the requests list to show the new request
       mutateRequests()
     } catch (error: any) {
       setTestError(error.message || 'Failed to execute test request')
@@ -594,6 +589,20 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
       setIsTesting(false)
     }
   }
+
+  const copyToClipboard = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return
+    navigator.clipboard.writeText(curlEditorValue)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [curlEditorValue])
+
+  const copyBrowserCodeToClipboard = useCallback(() => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return
+    navigator.clipboard.writeText(browserEditorValue)
+    setCopiedBrowser(true)
+    setTimeout(() => setCopiedBrowser(false), 2000)
+  }, [browserEditorValue])
 
   const exportData = (format: 'json' | 'csv') => {
     if (!session) {
@@ -683,7 +692,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     }
   }, [])
 
-  const RequestItem: React.FC<{ req: RequestData; getMethodColor: (m: string) => string; getStatusColor: (s: number) => string; copyDataToClipboard: (d: any, l: string) => void; }> = React.memo(({ req, getMethodColor, getStatusColor, copyDataToClipboard }) => {
+  const RequestItem: React.FC<{ req: RequestData; getMethodColor: (m: string) => string; getStatusColor: (s: number) => string; copyDataToClipboard: (d: any, l: string) => void; }> = React.memo(function RequestItem({ req, getMethodColor, getStatusColor, copyDataToClipboard }) {
     return (
       <div key={req.id} className="p-4 border border-gray-200 rounded-lg shadow-sm bg-white overflow-hidden">
         <div className="flex justify-between items-center mb-4 pb-2 border-b">
@@ -756,7 +765,7 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
   return (
     <>
       <Head>
-        <title>Callback Handler - Recorded Requests: {slug}</title>
+        <title>{`Callback Handler - Recorded Requests: ${slug}`}</title>
         <meta property="og:title" content={`Recorded Requests for ${slug}`} />
         <meta property="og:description" content={`Inspect HTTP requests sent to the ${slug} endpoint in real-time.`} />
         <meta property="og:image" content={`https://${host}/logo.png`} />
@@ -972,10 +981,19 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                     )}
                   </button>
                 </div>
-                <pre className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono leading-relaxed flex-grow min-h-[140px]">
-                  {curlCommand}
-                </pre>
+                <textarea
+                  value={curlEditorValue}
+                  onChange={(e) => {
+                    setCurlEditorValue(e.target.value)
+                    setTestError(null)
+                  }}
+                  spellCheck={false}
+                  className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg font-mono leading-relaxed flex-grow min-h-[140px] resize-none border-0 focus:outline-none focus:ring-2 focus:ring-gray-700"
+                />
                 <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy</Text>
+                {testRequestError && (
+                  <Text className="text-[11px] text-red-600 mt-3">{testRequestError}</Text>
+                )}
 
                 {/* Test Response Display */}
                 {testError && (
@@ -1081,10 +1099,19 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
                     )}
                   </button>
                 </div>
-                <pre className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono leading-relaxed flex-grow min-h-[140px]">
-                  {browserConsoleCode}
-                </pre>
+                <textarea
+                  value={browserEditorValue}
+                  onChange={(e) => {
+                    setBrowserEditorValue(e.target.value)
+                    setTestError(null)
+                  }}
+                  spellCheck={false}
+                  className="text-xs bg-gray-900 text-gray-100 p-4 rounded-lg font-mono leading-relaxed flex-grow min-h-[140px] resize-none border-0 focus:outline-none focus:ring-2 focus:ring-gray-700"
+                />
                 <Text className="text-[10px] text-gray-400 mt-2 uppercase font-bold tracking-wider text-center">Copy and paste in browser console, or click Test to execute from browser</Text>
+                {testRequestError && (
+                  <Text className="text-[11px] text-red-600 mt-3">{testRequestError}</Text>
+                )}
 
                 {/* Test Response Display */}
                 {testError && (
@@ -1307,4 +1334,3 @@ export default function RecordPage({ slug, requests: initialRequests = [], host 
     </>
   )
 }
-

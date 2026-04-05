@@ -2,63 +2,55 @@ import AuthSection from '@/components/AuthSection'
 import { Code, Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+
+const SLUG_COOKIE_MAX_AGE = 24 * 60 * 60
 
 export default function Home() {
   const router = useRouter()
   const [title, setTitle] = useState<string>('')
-  const [slug, setSlug] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
   // User-input slugs
   const createSlug = (value: string) => {
     // 1. Initial Type/Value Check
     if (typeof value !== 'string' || !value.trim()) {
-      return '';
+      return ''
     }
 
     // 2. Transformation
     let normalised = value
       .toLowerCase()
       .trim()
-      .replaceAll(/\s+/g, '-')           // Replace spaces with hyphens
-      .replaceAll(/[^a-z0-9-]/g, '')     // Remove all non-slug characters
-      .replaceAll(/-+/g, '-')            // Collapse multiple hyphens (--)
-      .replaceAll(/^-+|-+$/g, '');       // Trim hyphens from start/end
+      .replaceAll(/\s+/g, '-')
+      .replaceAll(/[^a-z0-9-]/g, '')
+      .replaceAll(/-+/g, '-')
+      .replaceAll(/^-+|-+$/g, '')
 
     // 3. Length Guard (Truncate instead of early return)
     if (normalised.length > 64) {
-      normalised = normalised.substring(0, 64).replaceAll(/-+$/, '');
+      normalised = normalised.substring(0, 64).replaceAll(/-+$/, '')
     }
 
-    // 4. Final Validation & State Update
-    const isValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalised);
-    
+    const isValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalised)
+
     if (isValid) {
-      const d = new Date();
-      const month = (d.getMonth() + 1).toString().padStart(2, '0');
-      const day = d.getDate().toString().padStart(2, '0');
-      return `${normalised}-${month}${day}`;
-    } else {
-      return '';
+      const d = new Date()
+      const month = (d.getMonth() + 1).toString().padStart(2, '0')
+      const day = d.getDate().toString().padStart(2, '0')
+      return `${normalised}-${month}${day}`
     }
-  };
-  
-  // mark the slug as created in this browser
-  const slugCreatedInThisBrowser = (slug: string): void => {
-    if(slug.trim().length > 0) {
-      const maxAge = 24 * 60 * 60
-      document.cookie = `slug_creator_${slug}=1; path=/; max-age=${maxAge}; SameSite=Lax; Author=Mutwiri; Service=Callback-Handler; Repo=https://github.com/patricmutwiri/callback-handler-ui`
-    } else {
-      console.error('Slug is empty');
-    }
-  };
 
-  useEffect(() => {
-    const validSlug = createSlug(title);
-    setSlug(validSlug); // set the slug in the state
-    slugCreatedInThisBrowser(validSlug); // mark the slug as created in this browser
-  }, [title]);
+    return ''
+  }
+
+  const markSlugCreatedInThisBrowser = (value: string): void => {
+    if (!value.trim()) return
+
+    document.cookie = `slug_creator_${value}=1; path=/; max-age=${SLUG_COOKIE_MAX_AGE}; SameSite=Lax`
+  }
+
+  const slug = createSlug(title)
 
   // Auto-generated slugs
   const generateSlug = (): string => {
@@ -69,6 +61,7 @@ export default function Home() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (slug.trim()) {
+      markSlugCreatedInThisBrowser(slug.trim())
       setLoading(true)
       router.push(`/record/${slug.trim()}`)
     }
@@ -79,14 +72,12 @@ export default function Home() {
       <Head>
         <title>Callback Handler</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Record and inspect HTTP requests" />
         <meta property="og:title" content="Callback Handler - Record & Inspect HTTP Requests" />
         <meta property="og:description" content="Generate a unique URL to capture HTTP requests and callbacks. Inspect headers, body, and more in real-time." />
         <meta property="og:image" content="https://callback-handler-ui.vercel.app/logo.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://callback-handler-ui.vercel.app/logo.png" />
         <meta name="author" content="Patrick Mutwiri"/>
-        <meta name="description" content="Record and inspect HTTP requests" />
         <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>  
       </Head>
 
