@@ -345,6 +345,7 @@ export default function Dashboard({ host }: DashboardProps) {
           name="description"
           content="Dashboard showing your recorded callback handler slugs."
         />
+        <meta name="robots" content="noindex,nofollow" />
       </Head>
 
       <div

@@ -4,6 +4,7 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
+import { absoluteUrl, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 const SLUG_COOKIE_MAX_AGE = 24 * 60 * 60
 
@@ -71,13 +72,24 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Callback Handler</title>
+        <title>Callback Handler | Capture and Inspect HTTP Requests</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+          name="description"
+          content="Generate a unique URL to capture HTTP requests and callbacks, inspect headers and payloads, and review responses in real time."
+        />
+        <link rel="canonical" href={absoluteUrl('/')} />
+        <meta property="og:url" content={absoluteUrl('/')} />
         <meta property="og:title" content="Callback Handler - Record & Inspect HTTP Requests" />
         <meta property="og:description" content="Generate a unique URL to capture HTTP requests and callbacks. Inspect headers, body, and more in real-time." />
-        <meta property="og:image" content="https://callback-handler-ui.vercel.app/logo.png" />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://callback-handler-ui.vercel.app/logo.png" />
+        <meta name="twitter:title" content="Callback Handler - Record & Inspect HTTP Requests" />
+        <meta
+          name="twitter:description"
+          content="Generate a unique URL to capture HTTP requests and callbacks. Inspect headers, body, and more in real-time."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
         <meta name="author" content="Patrick Mutwiri"/>
         <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>  
       </Head>

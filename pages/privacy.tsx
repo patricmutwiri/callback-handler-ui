@@ -1,19 +1,33 @@
 import { Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 import Link from 'next/link'
+import { absoluteUrl, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 export default function PrivacyPolicy() {
   return (
     <>
       <Head>
-        <title>Callback Handler - Privacy Policy</title>
+        <title>Callback Handler | Privacy Policy</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Privacy Policy for Callback Handler" />
+        <meta
+          name="description"
+          content="Read the Callback Handler privacy policy covering authentication data, captured request data, storage, retention, and user rights."
+        />
+        <link rel="canonical" href={absoluteUrl('/privacy')} />
+        <meta property="og:url" content={absoluteUrl('/privacy')} />
         <meta property="og:title" content="Callback Handler - Privacy Policy" />
-        <meta property="og:description" content="Privacy Policy" />
-        <meta property="og:image" content="https://callback-handler-ui.vercel.app/logo.png" />
+        <meta
+          property="og:description"
+          content="Read the Callback Handler privacy policy covering authentication data, captured request data, storage, retention, and user rights."
+        />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://callback-handler-ui.vercel.app/logo.png" />
+        <meta name="twitter:title" content="Callback Handler - Privacy Policy" />
+        <meta
+          name="twitter:description"
+          content="Read the Callback Handler privacy policy covering authentication data, captured request data, storage, retention, and user rights."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
         <meta name="author" content="Patrick Mutwiri"/>
         <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection"/>  
       </Head>

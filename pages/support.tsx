@@ -8,6 +8,7 @@
 import { Text } from '@vercel/examples-ui'
 import Head from 'next/head'
 import Link from 'next/link'
+import { absoluteUrl, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 const PAYPAL_SUPPORT_URL = 'https://www.paypal.com/ncp/payment/G54BFVLVSBVKS'
 
@@ -15,11 +16,26 @@ export default function SupportPage() {
   return (
     <>
       <Head>
-        <title>Callback Handler - Support Us</title>
+        <title>Callback Handler | Support Us</title>
         <meta
           name="description"
           content="Support Callback Handler through the hosted PayPal checkout page."
         />
+        <link rel="canonical" href={absoluteUrl('/support')} />
+        <meta property="og:url" content={absoluteUrl('/support')} />
+        <meta property="og:title" content="Callback Handler - Support Us" />
+        <meta
+          property="og:description"
+          content="Support Callback Handler through the hosted PayPal checkout page."
+        />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Callback Handler - Support Us" />
+        <meta
+          name="twitter:description"
+          content="Support Callback Handler through the hosted PayPal checkout page."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Head>
 
       <div

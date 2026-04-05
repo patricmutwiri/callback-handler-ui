@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://callback-handler-ui.vercel.app/sitemap.xml

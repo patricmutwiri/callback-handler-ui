@@ -81,6 +81,7 @@ export default function MyFeatureRequestsPage() {
           name="description"
           content="Track your submitted Callback Handler feature requests and follow their GitHub-backed status."
         />
+        <meta name="robots" content="noindex,nofollow" />
       </Head>
 
       <div

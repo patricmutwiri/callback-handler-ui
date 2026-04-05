@@ -11,6 +11,7 @@ import PusherServer from 'pusher'
 import Pusher from 'pusher-js'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
+import { DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 interface RequestData {
   id: string
@@ -907,9 +908,10 @@ export default function RecordPage({
     <>
       <Head>
         <title>{`Callback Handler - Recorded Requests: ${slug}`}</title>
+        <meta name="robots" content="noindex,nofollow" />
         <meta property="og:title" content={`Recorded Requests for ${slug}`} />
         <meta property="og:description" content={`Inspect HTTP requests sent to the ${slug} endpoint in real-time.`} />
-        <meta property="og:image" content={`https://${host}/logo.png`} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta name="author" content="Patrick Mutwiri" />
         <meta name="description" content="Record and inspect HTTP requests" />
         <meta name="keywords" content="HTTP requests, API testing, callback handler, request inspection" />

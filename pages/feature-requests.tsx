@@ -10,6 +10,7 @@ import { useSession } from 'next-auth/react'
 import Head from 'next/head'
 import Link from 'next/link'
 import { useState } from 'react'
+import { absoluteUrl, DEFAULT_OG_IMAGE } from '@/lib/seo'
 
 export default function FeatureRequestsPage() {
   const { data: session, status } = useSession()
@@ -65,11 +66,26 @@ export default function FeatureRequestsPage() {
   return (
     <>
       <Head>
-        <title>Callback Handler - Feature Requests</title>
+        <title>Callback Handler | Feature Requests</title>
         <meta
           name="description"
           content="Submit a feature request for Callback Handler and track it through GitHub-backed workflow updates."
         />
+        <link rel="canonical" href={absoluteUrl('/feature-requests')} />
+        <meta property="og:url" content={absoluteUrl('/feature-requests')} />
+        <meta property="og:title" content="Callback Handler - Feature Requests" />
+        <meta
+          property="og:description"
+          content="Submit a feature request for Callback Handler and track it through GitHub-backed workflow updates."
+        />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Callback Handler - Feature Requests" />
+        <meta
+          name="twitter:description"
+          content="Submit a feature request for Callback Handler and track it through GitHub-backed workflow updates."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Head>
 
       <div
