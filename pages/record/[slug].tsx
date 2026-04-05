@@ -29,6 +29,8 @@ interface Props {
   initialProtocol: string
 }
 
+const GUEST_SLUG_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
+
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 const parseRequestPreviewBody = (contentType: string, body: string) => {
@@ -45,6 +47,26 @@ const parseRequestPreviewBody = (contentType: string, body: string) => {
   }
 
   return body
+}
+
+const parseJavaScriptObjectLiteral = (body: string) => {
+  return Function(`"use strict"; return (${body});`)()
+}
+
+const appendResponseCookie = (res: Parameters<GetServerSideProps>[0]['res'], cookie: string) => {
+  const existing = res.getHeader('Set-Cookie')
+
+  if (!existing) {
+    res.setHeader('Set-Cookie', cookie)
+    return
+  }
+
+  if (Array.isArray(existing)) {
+    res.setHeader('Set-Cookie', [...existing, cookie])
+    return
+  }
+
+  res.setHeader('Set-Cookie', [String(existing), cookie])
 }
 
 async function getBody(req: any) {
@@ -74,6 +96,7 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
   const slug = query.slug as string
   const key = `requests:${slug}`
   const activeKey = `active:${slug}`
+  const ownerKey = `slug:owner:${slug}`
 
   const accept = (req.headers.accept || '') as string
   const isNextData = Boolean(req.headers['x-nextjs-data'])
@@ -98,6 +121,9 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       const today = timestampIso.split('T')[0]
       const forwarded = req.headers['x-forwarded-for']
       const ip = typeof forwarded === 'string' ? forwarded.split(/, /)[0] : req.socket.remoteAddress
+
+      const ownerRaw = await kv.get(ownerKey)
+      const hasAuthenticatedOwner = Boolean(ownerRaw)
 
       // Fetch custom response config
       const configKey = `config:${slug}`
@@ -126,25 +152,54 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         responseBody: config.body
       }
 
-      // 1 Year TTL in seconds
-      const TTL = 365 * 24 * 60 * 60
-
       // Store in Redis List
       await kv.lpush(key, JSON.stringify(requestData))
-      // Keep only last 100 requests
-      await kv.ltrim(key, 0, 99)
+      if (hasAuthenticatedOwner) {
+        await kv.ltrim(key, 0, 99)
+      }
 
         // Fire-and-forget stats/expiry to reduce latency
         ; (async () => {
           try {
-            await Promise.all([
-              kv.expire(key, TTL),
-              kv.expire(activeKey, TTL),
-              kv.expire(configKey, TTL),
+            const adminRequestData = {
+              id: requestData.id,
+              slug,
+              timestamp: requestData.timestamp,
+              method: requestData.method,
+              ip: requestData.ip,
+              responseStatus: requestData.responseStatus,
+              accessType: hasAuthenticatedOwner ? 'authenticated' : 'guest',
+              ownerEmail:
+                typeof ownerRaw === 'string'
+                  ? (() => {
+                      try {
+                        return JSON.parse(ownerRaw).email ?? null
+                      } catch {
+                        return null
+                      }
+                    })()
+                  : (ownerRaw as any)?.email ?? null,
+            }
+
+            const work = [
               kv.sadd('all_slugs', slug),
+              kv.lpush('admin:requests', JSON.stringify(adminRequestData)),
+              kv.ltrim('admin:requests', 0, 499),
+              kv.incr('stats:requests:all-time'),
+              kv.incr(hasAuthenticatedOwner ? 'stats:requests:authenticated' : 'stats:requests:guest'),
               kv.incr(`stats:total:${today}`),
               kv.incr(`stats:slug:${slug}:${today}`)
-            ])
+            ]
+
+            if (hasAuthenticatedOwner) {
+              work.push(
+                kv.expire(key, GUEST_SLUG_COOKIE_MAX_AGE),
+                kv.expire(activeKey, GUEST_SLUG_COOKIE_MAX_AGE),
+                kv.expire(configKey, GUEST_SLUG_COOKIE_MAX_AGE)
+              )
+            }
+
+            await Promise.all(work)
           } catch (e) {
             console.error('Non-fatal stats/expire failure', e)
           }
@@ -191,6 +246,13 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       await kv.set(activeKey, true)
     }
 
+    if (!session?.user) {
+      appendResponseCookie(
+        res,
+        `slug_creator_${slug}=1; Path=/; Max-Age=${GUEST_SLUG_COOKIE_MAX_AGE}; SameSite=Lax`
+      )
+    }
+
     // tie slug to logged-in user if available and no owner exists yet (non-blocking)
     ; (async () => {
       try {
@@ -198,7 +260,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         if (session?.user) {
           const userId = session.user.id ?? session.user.email ?? null
           if (userId) {
-            const ownerKey = `slug:owner:${slug}`
             const existingOwner = await kv.get(ownerKey)
             if (!existingOwner) {
               const ownerData = {
@@ -211,6 +272,11 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
               }
               await kv.set(ownerKey, JSON.stringify(ownerData))
               await kv.sadd(`user_slugs:${userId}`, slug)
+              await Promise.all([
+                kv.expire(key, GUEST_SLUG_COOKIE_MAX_AGE),
+                kv.expire(activeKey, GUEST_SLUG_COOKIE_MAX_AGE),
+                kv.expire(`config:${slug}`, GUEST_SLUG_COOKIE_MAX_AGE),
+              ])
             }
           }
         }
@@ -314,6 +380,21 @@ export default function RecordPage({ slug, requests: initialRequests = [], host,
 
     return null
   }
+
+  const validateBrowserBody = useCallback((contentType: string, body: string): string | null => {
+    if (!body) return null
+
+    if (contentType === 'application/json') {
+      try {
+        parseJavaScriptObjectLiteral(body)
+        return null
+      } catch (error: any) {
+        return `Invalid JavaScript object: ${error.message}`
+      }
+    }
+
+    return validateBody(contentType, body)
+  }, [])
 
   const getTemplate = useCallback((contentType: string) => {
     if (contentType === 'application/json') {
@@ -564,8 +645,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host,
       return null
     }
 
-    return validateBody(activeSnippetRequest.contentType, activeSnippetRequest.body)
-  }, [activeSnippetRequest.body, activeSnippetRequest.contentType, testRequestAllowsBody])
+    return activeTab === 'browser'
+      ? validateBrowserBody(activeSnippetRequest.contentType, activeSnippetRequest.body)
+      : validateBody(activeSnippetRequest.contentType, activeSnippetRequest.body)
+  }, [activeSnippetRequest.body, activeSnippetRequest.contentType, activeTab, testRequestAllowsBody, validateBrowserBody])
 
   const executeTest = async () => {
     setIsTesting(true)
@@ -587,7 +670,10 @@ export default function RecordPage({ slug, requests: initialRequests = [], host,
         requestInit.headers = {
           'Content-Type': activeSnippetRequest.contentType
         }
-        requestInit.body = activeSnippetRequest.body
+        requestInit.body =
+          activeTab === 'browser' && activeSnippetRequest.contentType === 'application/json'
+            ? JSON.stringify(parseJavaScriptObjectLiteral(activeSnippetRequest.body))
+            : activeSnippetRequest.body
       }
 
       const response = await fetch(url, requestInit)
@@ -619,7 +705,12 @@ export default function RecordPage({ slug, requests: initialRequests = [], host,
           ? { 'content-type': activeSnippetRequest.contentType }
           : {},
         body: testRequestAllowsBody
-          ? parseRequestPreviewBody(activeSnippetRequest.contentType, activeSnippetRequest.body)
+          ? parseRequestPreviewBody(
+              activeSnippetRequest.contentType,
+              activeTab === 'browser' && activeSnippetRequest.contentType === 'application/json'
+                ? JSON.stringify(parseJavaScriptObjectLiteral(activeSnippetRequest.body))
+                : activeSnippetRequest.body
+            )
           : null,
         query: { slug },
         ip: 'local-test',

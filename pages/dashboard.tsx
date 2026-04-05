@@ -11,6 +11,13 @@ interface DashboardProps {
   host: string
 }
 
+interface AdminUsageStats {
+  totalRequests: number
+  guestRequests: number
+  authenticatedRequests: number
+  uniqueSlugs: number
+}
+
 interface UserSlug {
   slug: string
   createdAt: string | null
@@ -18,6 +25,23 @@ interface UserSlug {
 
 interface SlugsResponse {
   slugs: UserSlug[]
+  error?: string
+}
+
+interface AdminUsageRequest {
+  id: string
+  slug: string
+  timestamp: string
+  method: string
+  ip: string
+  responseStatus?: number
+  accessType: 'guest' | 'authenticated'
+  ownerEmail?: string | null
+}
+
+interface AdminUsageResponse {
+  stats: AdminUsageStats
+  recentRequests: AdminUsageRequest[]
   error?: string
 }
 
@@ -55,8 +79,19 @@ export default function Dashboard({ host }: DashboardProps) {
       dedupingInterval: 5000,
     }
   )
+  const { data: adminUsage } = useSWR<AdminUsageResponse>(
+    status === 'authenticated' ? '/api/admin/usage' : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 10000,
+      shouldRetryOnError: false,
+    }
+  )
 
   const slugs = data?.slugs ?? []
+  const adminStats = adminUsage?.stats
+  const recentRequests = adminUsage?.recentRequests ?? []
 
   const endpointBase =
     typeof window !== 'undefined'
@@ -140,6 +175,67 @@ export default function Dashboard({ host }: DashboardProps) {
           </div>
         )}
 
+        {adminStats && (
+          <div className="p-5 border rounded-lg bg-white/85 backdrop-blur-sm shadow-sm">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div>
+                <Text variant="h2">Usage Overview</Text>
+                <Text className="text-sm text-gray-600 mt-1">
+                  Admin view of all tracked request activity across guest and authenticated usage.
+                </Text>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+              <div className="rounded-lg border bg-gray-50 p-4">
+                <Text className="text-[11px] uppercase tracking-wide font-semibold text-gray-500">Total Requests</Text>
+                <Text className="text-2xl font-semibold mt-2">{adminStats.totalRequests}</Text>
+              </div>
+              <div className="rounded-lg border bg-gray-50 p-4">
+                <Text className="text-[11px] uppercase tracking-wide font-semibold text-gray-500">Guest Requests</Text>
+                <Text className="text-2xl font-semibold mt-2">{adminStats.guestRequests}</Text>
+              </div>
+              <div className="rounded-lg border bg-gray-50 p-4">
+                <Text className="text-[11px] uppercase tracking-wide font-semibold text-gray-500">Authenticated Requests</Text>
+                <Text className="text-2xl font-semibold mt-2">{adminStats.authenticatedRequests}</Text>
+              </div>
+              <div className="rounded-lg border bg-gray-50 p-4">
+                <Text className="text-[11px] uppercase tracking-wide font-semibold text-gray-500">Tracked Slugs</Text>
+                <Text className="text-2xl font-semibold mt-2">{adminStats.uniqueSlugs}</Text>
+              </div>
+            </div>
+
+            <div className="border rounded-lg overflow-hidden">
+              <div className="px-4 py-3 border-b bg-gray-50">
+                <Text className="text-sm font-semibold">Recent Request Activity</Text>
+              </div>
+              {recentRequests.length === 0 ? (
+                <div className="px-4 py-6 text-sm text-gray-500">
+                  No tracked requests yet.
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {recentRequests.map((request) => (
+                    <div key={request.id} className="px-4 py-3 flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0">
+                        <Text className="text-sm font-semibold break-all">{request.slug}</Text>
+                        <Text className="text-xs text-gray-500 break-all">
+                          {request.method} • {request.accessType} • {request.ip}
+                          {request.ownerEmail ? ` • ${request.ownerEmail}` : ''}
+                        </Text>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span>{request.responseStatus ?? 200}</span>
+                        <span>{new Date(request.timestamp).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="mt-2">
           {isLoading && (
             <Text className="text-sm text-gray-500">
@@ -218,4 +314,3 @@ export default function Dashboard({ host }: DashboardProps) {
     </>
   )
 }
-

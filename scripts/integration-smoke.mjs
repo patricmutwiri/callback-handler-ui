@@ -13,8 +13,6 @@ const HOST = '127.0.0.1'
 const PORT = 3100
 const BASE_URL = `http://${HOST}:${PORT}`
 const SLUG = `integration-${Date.now()}-${randomUUID().slice(0, 8)}`
-const SLUG_COOKIE = `slug_creator_${SLUG}=1`
-
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 
 function createError(message, details = '') {
@@ -77,6 +75,16 @@ async function fetchWithExpectation(path, options = {}) {
   return { response, text, json }
 }
 
+function extractCookie(response) {
+  const rawCookie = response.headers.get('set-cookie') || ''
+  const slugCookie = rawCookie
+    .split(',')
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`slug_creator_${SLUG}=`))
+
+  return slugCookie ? slugCookie.split(';')[0] : ''
+}
+
 async function waitForServer(serverProcess) {
   const maxAttempts = 60
 
@@ -126,12 +134,13 @@ function assert(condition, message, details = '') {
 }
 
 async function pollForCapturedRequest() {
+  const slugCookie = `slug_creator_${SLUG}=1`
   const maxAttempts = 15
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const { response, json, text } = await fetchWithExpectation(`/api/record/${SLUG}`, {
       headers: {
-        Cookie: SLUG_COOKIE,
+        Cookie: slugCookie,
       },
     })
 
@@ -191,6 +200,12 @@ async function main() {
     })
     assert(recordPage.response.ok, 'Record page did not initialize successfully.', recordPage.text)
     assert(recordPage.text.includes(SLUG), 'Record page response did not include the initialized slug.')
+    const slugCookie = extractCookie(recordPage.response)
+    assert(
+      slugCookie.startsWith(`slug_creator_${SLUG}=`),
+      'Guest record page did not issue the slug ownership cookie.',
+      recordPage.response.headers.get('set-cookie') || ''
+    )
 
     console.log('5. Confirming unauthorized config access is blocked...')
     const deniedConfig = await fetchWithExpectation(`/api/config/${SLUG}`, {
@@ -213,7 +228,7 @@ async function main() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Cookie: SLUG_COOKIE,
+        Cookie: slugCookie,
       },
       body: JSON.stringify(configPayload),
     })
@@ -241,7 +256,7 @@ async function main() {
     console.log('9. Verifying authorized config reads still work...')
     const authorizedConfig = await fetchWithExpectation(`/api/config/${SLUG}`, {
       headers: {
-        Cookie: SLUG_COOKIE,
+        Cookie: slugCookie,
       },
     })
     assert(authorizedConfig.response.ok, 'Authorized config read failed.', authorizedConfig.text)
