@@ -42,22 +42,6 @@ const GUEST_SLUG_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
-const parseRequestPreviewBody = (contentType: string, body: string) => {
-  if (!body) {
-    return null
-  }
-
-  if (contentType === 'application/json') {
-    try {
-      return JSON.parse(body)
-    } catch {
-      return body
-    }
-  }
-
-  return body
-}
-
 const parseJavaScriptObjectLiteral = (body: string) => {
   return Function(`"use strict"; return (${body});`)()
 }
@@ -727,51 +711,7 @@ export default function RecordPage({
         headers: responseHeaders
       })
 
-      const previewRequest: RequestData = {
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        method: activeSnippetRequest.method,
-        headers: testRequestAllowsBody
-          ? { 'content-type': activeSnippetRequest.contentType }
-          : {},
-        body: testRequestAllowsBody
-          ? parseRequestPreviewBody(
-              activeSnippetRequest.contentType,
-              activeTab === 'browser' && activeSnippetRequest.contentType === 'application/json'
-                ? JSON.stringify(parseJavaScriptObjectLiteral(activeSnippetRequest.body))
-                : activeSnippetRequest.body
-            )
-          : null,
-        query: { slug },
-        ip: 'local-test',
-        responseStatus: response.status,
-        responseBody: responseData,
-      }
-
-      mutateRequests((current) => {
-        const safeCurrent = Array.isArray(current?.requests) ? current.requests : []
-        const alreadyPresent = safeCurrent.some((item) => {
-          return (
-            item.timestamp === previewRequest.timestamp &&
-            item.method === previewRequest.method &&
-            JSON.stringify(item.body) === JSON.stringify(previewRequest.body)
-          )
-        })
-
-        if (alreadyPresent) {
-          return current ?? {
-            requests: safeCurrent,
-            requiresLogin: initialRequiresLoginForMore,
-            guestVisibleLimit,
-          }
-        }
-
-        return {
-          requests: [previewRequest, ...safeCurrent],
-          requiresLogin: current?.requiresLogin ?? initialRequiresLoginForMore,
-          guestVisibleLimit: current?.guestVisibleLimit ?? guestVisibleLimit,
-        }
-      }, false)
+      await mutateRequests()
     } catch (error: any) {
       setTestError(error.message || 'Failed to execute test request')
     } finally {
