@@ -5,7 +5,7 @@ Callback Handler helps you create unique URLs for receiving, inspecting, and deb
 It is built for webhook testing, callback inspection, request replay, quick endpoint sharing, and lightweight API debugging without needing to spin up a custom receiver every time.
 
 Live service:
-- [callback-handler-ui.vercel.app](https://callback-handler-ui.vercel.app)
+- [callback-handler.vercel.app](https://callback-handler.vercel.app)
 
 ## What You Can Do
 
