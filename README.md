@@ -46,7 +46,7 @@ Live service:
 
 Go to:
 
-- [https://callback-handler-ui.vercel.app](https://callback-handler-ui.vercel.app)
+- [https://callback-handler.vercel.app](https://callback-handler.vercel.app)
 
 From the top navigation you can access:
 
@@ -67,7 +67,7 @@ A slug is the unique path segment that becomes your live request endpoint.
 Example:
 
 ```text
-https://callback-handler-ui.vercel.app/record/my-webhook-0405
+https://callback-handler.vercel.app/record/my-webhook-0405
 ```
 
 You can create a slug in two ways:
@@ -122,7 +122,7 @@ Once your record page is open, your endpoint is live.
 Example endpoint:
 
 ```text
-https://callback-handler-ui.vercel.app/record/my-webhook-0405
+https://callback-handler.vercel.app/record/my-webhook-0405
 ```
 
 You can now send requests from:
@@ -136,7 +136,7 @@ You can now send requests from:
 ### Example: JSON POST with curl
 
 ```bash
-curl -X POST https://callback-handler-ui.vercel.app/record/my-webhook-0405 \
+curl -X POST https://callback-handler.vercel.app/record/my-webhook-0405 \
   -H "Content-Type: application/json" \
   -d '{"event":"user_signup","id":123}'
 ```
@@ -152,7 +152,7 @@ curl -X POST https://callback-handler-ui.vercel.app/record/my-webhook-0405 \
 ### Example: Browser Console
 
 ```js
-fetch('https://callback-handler-ui.vercel.app/record/my-webhook-0405', {
+fetch('https://callback-handler.vercel.app/record/my-webhook-0405', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -371,7 +371,7 @@ Use this when testing an external integration.
 ## Capture a Stripe-Like Event
 
 ```bash
-curl -X POST https://callback-handler-ui.vercel.app/record/stripe-debug-0405 \
+curl -X POST https://callback-handler.vercel.app/record/stripe-debug-0405 \
   -H "Content-Type: application/json" \
   -d '{
     "type":"payment_intent.succeeded",
@@ -382,7 +382,7 @@ curl -X POST https://callback-handler-ui.vercel.app/record/stripe-debug-0405 \
 ## Capture GitHub-Style JSON
 
 ```bash
-curl -X POST https://callback-handler-ui.vercel.app/record/github-debug-0405 \
+curl -X POST https://callback-handler.vercel.app/record/github-debug-0405 \
   -H "Content-Type: application/json" \
   -H "X-GitHub-Event: push" \
   -d '{
@@ -452,10 +452,10 @@ Callback Handler is useful for:
 
 ## Support and Links
 
-- App: [callback-handler-ui.vercel.app](https://callback-handler-ui.vercel.app)
-- Feature Requests: [callback-handler-ui.vercel.app/feature-requests](https://callback-handler-ui.vercel.app/feature-requests)
-- Support: [callback-handler-ui.vercel.app/support](https://callback-handler-ui.vercel.app/support)
-- Privacy: [callback-handler-ui.vercel.app/privacy](https://callback-handler-ui.vercel.app/privacy)
+- App: [callback-handler.vercel.app](https://callback-handler.vercel.app)
+- Feature Requests: [callback-handler.vercel.app/feature-requests](https://callback-handler.vercel.app/feature-requests)
+- Support: [callback-handler.vercel.app/support](https://callback-handler.vercel.app/support)
+- Privacy: [callback-handler.vercel.app/privacy](https://callback-handler.vercel.app/privacy)
 - Repository: [github.com/patricmutwiri/callback-handler-ui](https://github.com/patricmutwiri/callback-handler-ui)
 
 ## Contributing
