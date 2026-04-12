@@ -1,4 +1,6 @@
-# <img src="public/logo.png" width="150" alt="Callback Handler logo" /> Callback Handler
+# <img src="public/logo.png" width="150" alt="Callback Handler logo" />
+
+Callback Handler  
 
 Callback Handler helps you create unique URLs for receiving, inspecting, and debugging HTTP requests in real time.
 
