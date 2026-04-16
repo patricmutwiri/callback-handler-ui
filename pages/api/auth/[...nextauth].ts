@@ -3,6 +3,7 @@ import NextAuth, { NextAuthOptions } from 'next-auth'
 import FacebookProvider from 'next-auth/providers/facebook'
 import GithubProvider from 'next-auth/providers/github'
 import GoogleProvider from 'next-auth/providers/google'
+import { linkFeatureRequestsToUser, normalizeEmailAddress } from '../../../lib/feature-requests.mjs'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -23,10 +24,11 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account, profile }) {
       // Store user info in KV if needed
       if (user?.email) {
-        const userKey = `user:${user.email}`
+        const normalizedEmail = normalizeEmailAddress(user.email)
+        const userKey = `user:${normalizedEmail}`
         await kv.set(userKey, {
           id: user.id,
-          email: user.email,
+          email: normalizedEmail,
           name: user.name,
           image: user.image,
           provider: account?.provider,
@@ -34,12 +36,19 @@ export const authOptions: NextAuthOptions = {
           updatedAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString()
         })
+        await linkFeatureRequestsToUser({
+          kvClient: kv,
+          user: {
+            id: user.id,
+            email: normalizedEmail,
+          },
+        })
       }
       return true
     },
     async session({ session, token }) {
       if (session.user?.email) {
-        const userKey = `user:${session.user.email}`
+        const userKey = `user:${normalizeEmailAddress(session.user.email)}`
         const userData = await kv.get(userKey)
         if (userData && typeof userData === 'object') {
           session.user.id = (userData as any).id

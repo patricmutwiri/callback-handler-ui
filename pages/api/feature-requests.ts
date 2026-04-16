@@ -8,7 +8,12 @@
 import { kv } from '@vercel/kv'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { publishAdminAlert } from '../../lib/admin-monitoring.mjs'
-import { buildFeatureRequestRecord, createGithubIssueForFeatureRequest, validateFeatureRequestInput } from '../../lib/feature-requests.mjs'
+import {
+  buildFeatureRequestRecord,
+  createGithubIssueForFeatureRequest,
+  featureRequestUserIndexKey,
+  validateFeatureRequestInput,
+} from '../../lib/feature-requests.mjs'
 import { verifyTurnstileToken } from '../../lib/turnstile.mjs'
 
 type Data =
@@ -104,15 +109,9 @@ export default async function handler(
     ])
     await kv.lpush('feature_requests:index', storedRequest.id)
     await kv.ltrim('feature_requests:index', 0, 499)
-    await kv.lpush(
-      `feature_requests:user:${storedRequest.requesterEmail.toLowerCase()}`,
-      storedRequest.id
-    )
-    await kv.ltrim(
-      `feature_requests:user:${storedRequest.requesterEmail.toLowerCase()}`,
-      0,
-      199
-    )
+    const userIndexKey = featureRequestUserIndexKey(storedRequest.requesterEmail)
+    await kv.lpush(userIndexKey, storedRequest.id)
+    await kv.ltrim(userIndexKey, 0, 199)
 
     return res.status(201).json({
       request: {

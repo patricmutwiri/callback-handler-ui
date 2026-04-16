@@ -1,7 +1,7 @@
 import { kv } from '@vercel/kv'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
-import { canAccessSlugConfig, readOwnerRecord } from '../../../lib/slug-access.mjs'
+import { canAccessSlugConfig, readOwnerRecord, SLUG_RETENTION_SECONDS } from '../../../lib/slug-access.mjs'
 import { authOptions } from '../auth/[...nextauth]'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -53,6 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         contentType: contentType || 'application/json' 
       }
       await kv.set(key, JSON.stringify(config))
+      await kv.expire(key, SLUG_RETENTION_SECONDS)
       
       return res.status(200).json({ success: true, config })
     } catch (error) {

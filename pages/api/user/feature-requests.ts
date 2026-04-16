@@ -8,7 +8,11 @@
 import { kv } from '@vercel/kv'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
-import { readFeatureRequestRecord } from '../../../lib/feature-requests.mjs'
+import {
+  featureRequestUserIndexKey,
+  normalizeEmailAddress,
+  readFeatureRequestRecord,
+} from '../../../lib/feature-requests.mjs'
 import { authOptions } from '../auth/[...nextauth]'
 
 const DEFAULT_PAGE_SIZE = 10
@@ -51,7 +55,7 @@ export default async function handler(
   }
 
   const session = await getServerSession(req, res, authOptions)
-  const sessionEmail = session?.user?.email?.toLowerCase() || ''
+  const sessionEmail = normalizeEmailAddress(session?.user?.email)
 
   if (!sessionEmail) {
     return res.status(401).json({ error: 'Unauthorized' })
@@ -63,7 +67,7 @@ export default async function handler(
   const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, requestedPageSize))
   const start = (page - 1) * pageSize
   const end = start + pageSize - 1
-  const userIndexKey = `feature_requests:user:${sessionEmail}`
+  const userIndexKey = featureRequestUserIndexKey(sessionEmail)
 
   try {
     const [requestIdsRaw, totalItemsRaw] = await Promise.all([
@@ -83,10 +87,11 @@ export default async function handler(
       .map((item) => readFeatureRequestRecord(item))
       .filter((item): item is FeatureRequestRecord => {
         return Boolean(
-          item &&
+            item &&
             typeof item === 'object' &&
             typeof item.requesterEmail === 'string' &&
-            item.requesterEmail.toLowerCase() === sessionEmail
+            (normalizeEmailAddress(item.requesterEmail) === sessionEmail ||
+              normalizeEmailAddress(item.linkedUserEmail) === sessionEmail)
         )
       })
 

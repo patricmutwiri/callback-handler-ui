@@ -4,7 +4,7 @@ import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth'
 import { signIn, useSession } from 'next-auth/react'
 import Head from 'next/head'
-import { getGuestRequestViewLimit } from '../../lib/slug-access.mjs'
+import { getGuestRequestViewLimit, SLUG_RETENTION_SECONDS } from '../../lib/slug-access.mjs'
 import { publishAdminAlert } from '../../lib/admin-monitoring.mjs'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
@@ -39,8 +39,6 @@ interface RequestsResponse {
   requiresLogin: boolean
   guestVisibleLimit: number
 }
-
-const GUEST_SLUG_COOKIE_MAX_AGE = 365 * 24 * 60 * 60
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
@@ -187,12 +185,14 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
               kv.incr(`stats:slug:${slug}:${today}`)
             ]
 
+            work.push(
+              kv.expire(key, SLUG_RETENTION_SECONDS),
+              kv.expire(activeKey, SLUG_RETENTION_SECONDS),
+              kv.expire(configKey, SLUG_RETENTION_SECONDS)
+            )
+
             if (hasAuthenticatedOwner) {
-              work.push(
-                kv.expire(key, GUEST_SLUG_COOKIE_MAX_AGE),
-                kv.expire(activeKey, GUEST_SLUG_COOKIE_MAX_AGE),
-                kv.expire(configKey, GUEST_SLUG_COOKIE_MAX_AGE)
-              )
+              work.push(kv.expire(ownerKey, SLUG_RETENTION_SECONDS))
             }
 
             await Promise.all(work)
@@ -252,11 +252,12 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
     if (!isActive) {
       await kv.set(activeKey, true)
     }
+    await kv.expire(activeKey, SLUG_RETENTION_SECONDS)
 
     if (!session?.user) {
       appendResponseCookie(
         res,
-        `slug_creator_${slug}=1; Path=/; Max-Age=${GUEST_SLUG_COOKIE_MAX_AGE}; SameSite=Lax`
+        `slug_creator_${slug}=1; Path=/; Max-Age=${SLUG_RETENTION_SECONDS}; SameSite=Lax`
       )
     }
 
@@ -280,9 +281,10 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
               await kv.set(ownerKey, JSON.stringify(ownerData))
               await kv.sadd(`user_slugs:${userId}`, slug)
               await Promise.all([
-                kv.expire(key, GUEST_SLUG_COOKIE_MAX_AGE),
-                kv.expire(activeKey, GUEST_SLUG_COOKIE_MAX_AGE),
-                kv.expire(`config:${slug}`, GUEST_SLUG_COOKIE_MAX_AGE),
+                kv.expire(key, SLUG_RETENTION_SECONDS),
+                kv.expire(activeKey, SLUG_RETENTION_SECONDS),
+                kv.expire(`config:${slug}`, SLUG_RETENTION_SECONDS),
+                kv.expire(ownerKey, SLUG_RETENTION_SECONDS),
               ])
             }
           }
