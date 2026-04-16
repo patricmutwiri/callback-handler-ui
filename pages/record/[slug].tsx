@@ -4,7 +4,11 @@ import { GetServerSideProps } from 'next'
 import { getServerSession } from 'next-auth'
 import { signIn, useSession } from 'next-auth/react'
 import Head from 'next/head'
-import { getGuestRequestViewLimit, SLUG_RETENTION_SECONDS } from '../../lib/slug-access.mjs'
+import {
+  getGuestRequestViewLimit,
+  getSlugUserIndexKeys,
+  SLUG_RETENTION_SECONDS,
+} from '../../lib/slug-access.mjs'
 import { publishAdminAlert } from '../../lib/admin-monitoring.mjs'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
@@ -279,7 +283,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
                 createdAt: new Date().toISOString(),
               }
               await kv.set(ownerKey, JSON.stringify(ownerData))
-              await kv.sadd(`user_slugs:${userId}`, slug)
+              const userSlugIndexKeys = getSlugUserIndexKeys(session.user)
+              await Promise.all(userSlugIndexKeys.map((indexKey) => kv.sadd(indexKey, slug)))
               await Promise.all([
                 kv.expire(key, SLUG_RETENTION_SECONDS),
                 kv.expire(activeKey, SLUG_RETENTION_SECONDS),

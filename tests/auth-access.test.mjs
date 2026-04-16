@@ -12,8 +12,10 @@ import {
   canAccessSlugConfig,
   getRecordAccessDecision,
   getGuestRequestViewLimit,
+  getSlugUserIndexKeys,
   hasSlugCookieAccess,
   isSlugOwner,
+  normalizeUserEmail,
   parseCookies,
   readOwnerRecord,
 } from '../lib/slug-access.mjs'
@@ -63,6 +65,18 @@ test('isSlugOwner prefers id matches and falls back to case-insensitive email', 
   assert.equal(
     isSlugOwner({ id: 'user-1', email: 'owner@example.com' }, { id: 'user-2', email: 'other@example.com' }),
     false
+  )
+})
+
+test('getSlugUserIndexKeys includes provider id and normalized email indexes', () => {
+  assert.equal(normalizeUserEmail(' Dev@Patric.xyz '), 'dev@patric.xyz')
+  assert.deepEqual(
+    getSlugUserIndexKeys({ id: 'github-123', email: ' Dev@Patric.xyz ' }),
+    ['user_slugs:github-123', 'user_slugs:dev@patric.xyz']
+  )
+  assert.deepEqual(
+    getSlugUserIndexKeys({ id: 'dev@patric.xyz', email: 'Dev@Patric.xyz' }),
+    ['user_slugs:dev@patric.xyz']
   )
 })
 

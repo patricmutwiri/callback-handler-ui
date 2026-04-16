@@ -1,6 +1,11 @@
 import { kv } from '@vercel/kv'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getServerSession } from 'next-auth'
+import {
+  getSlugUserIndexKeys,
+  isSlugOwner,
+  readOwnerRecord,
+} from '../../../lib/slug-access.mjs'
 import { authOptions } from '../auth/[...nextauth]'
 
 interface UserSlug {
@@ -30,23 +35,36 @@ export default async function handler(
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  const userId = (session.user.id as string | null) ?? session.user.email ?? null
+  const userIndexKeys = getSlugUserIndexKeys(session.user)
 
-  if (!userId) {
+  if (userIndexKeys.length === 0) {
     return res.status(400).json({ error: 'User identifier not found' })
   }
 
   try {
-    const key = `user_slugs:${userId}`
-    const rawSlugs = (await kv.smembers(key)) as unknown
-    const cleanedSlugs = Array.isArray(rawSlugs)
-      ? rawSlugs.filter(
-          (s): s is string => typeof s === 'string' && s.trim().length > 0
-        )
-      : []
+    const indexedSlugGroups = await Promise.all(
+      userIndexKeys.map((key) => kv.smembers(key) as Promise<unknown>)
+    )
+    const indexedSlugs = indexedSlugGroups.flatMap((rawSlugs) => {
+      return Array.isArray(rawSlugs)
+        ? rawSlugs.filter(
+            (slug): slug is string => typeof slug === 'string' && slug.trim().length > 0
+          )
+        : []
+    })
+    const allKnownSlugs = await kv.smembers('all_slugs') as unknown
+    const candidateSlugs = new Set(indexedSlugs)
 
-    const slugsWithMeta: UserSlug[] = await Promise.all(
-      cleanedSlugs.map(async (slug) => {
+    if (Array.isArray(allKnownSlugs)) {
+      for (const slug of allKnownSlugs) {
+        if (typeof slug === 'string' && slug.trim()) {
+          candidateSlugs.add(slug)
+        }
+      }
+    }
+
+    const slugsWithMeta: Array<UserSlug | null> = await Promise.all(
+      Array.from(candidateSlugs).map(async (slug) => {
         try {
           const ownerRaw = await kv.get(`slug:owner:${slug}`)
           const deletionRaw = await kv.get(`slug:deletion:${slug}`)
@@ -62,24 +80,10 @@ export default async function handler(
             deletion = deletionRaw
           }
 
-          if (!ownerRaw) {
-            return {
-              slug,
-              createdAt: null,
-              deletionRequestedAt: deletion?.requestedAt ?? null,
-              deletionEligibleAfter: deletion?.eligibleAfter ?? null,
-              deletionStatus: deletion?.status === 'pending' ? 'pending' : 'none',
-              deletionReason: deletion?.reason ?? null,
-            }
-          }
+          const owner = readOwnerRecord(ownerRaw)
 
-          let owner: any = ownerRaw
-          if (typeof ownerRaw === 'string') {
-            try {
-              owner = JSON.parse(ownerRaw)
-            } catch {
-              owner = null
-            }
+          if (!owner || !isSlugOwner(owner, session.user)) {
+            return null
           }
 
           const createdAt =
@@ -96,20 +100,24 @@ export default async function handler(
             deletionReason: deletion?.reason ?? null,
           }
         } catch {
-          return {
-            slug,
-            createdAt: null,
-            deletionRequestedAt: null,
-            deletionEligibleAfter: null,
-            deletionStatus: 'none',
-            deletionReason: null,
-          }
+          return null
         }
       })
     )
+    const ownedSlugsWithMeta = slugsWithMeta.filter(
+      (item): item is UserSlug => Boolean(item)
+    )
+
+    if (ownedSlugsWithMeta.length > 0) {
+      await Promise.all(
+        userIndexKeys.flatMap((indexKey) =>
+          ownedSlugsWithMeta.map((item) => kv.sadd(indexKey, item.slug))
+        )
+      )
+    }
 
     // Sort by newest first when we have dates, otherwise by slug
-    slugsWithMeta.sort((a, b) => {
+    ownedSlugsWithMeta.sort((a, b) => {
       if (a.createdAt && b.createdAt) {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       }
@@ -118,7 +126,7 @@ export default async function handler(
       return a.slug.localeCompare(b.slug)
     })
 
-    return res.status(200).json({ slugs: slugsWithMeta })
+    return res.status(200).json({ slugs: ownedSlugsWithMeta })
   } catch (error) {
     console.error('Failed to load user slugs:', error)
     return res.status(500).json({ error: 'Failed to load user slugs' })
