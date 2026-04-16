@@ -7,6 +7,8 @@ import Head from 'next/head'
 import {
   getGuestRequestViewLimit,
   getSlugUserIndexKeys,
+  isSlugOwner,
+  readOwnerRecord,
   SLUG_RETENTION_SECONDS,
 } from '../../lib/slug-access.mjs'
 import { publishAdminAlert } from '../../lib/admin-monitoring.mjs'
@@ -256,7 +258,10 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
     if (!isActive) {
       await kv.set(activeKey, true)
     }
-    await kv.expire(activeKey, SLUG_RETENTION_SECONDS)
+    await Promise.all([
+      kv.sadd('all_slugs', slug),
+      kv.expire(activeKey, SLUG_RETENTION_SECONDS),
+    ])
 
     if (!session?.user) {
       appendResponseCookie(
@@ -273,6 +278,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
           const userId = session.user.id ?? session.user.email ?? null
           if (userId) {
             const existingOwner = await kv.get(ownerKey)
+            const userSlugIndexKeys = getSlugUserIndexKeys(session.user)
+
             if (!existingOwner) {
               const ownerData = {
                 id: userId,
@@ -283,7 +290,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
                 createdAt: new Date().toISOString(),
               }
               await kv.set(ownerKey, JSON.stringify(ownerData))
-              const userSlugIndexKeys = getSlugUserIndexKeys(session.user)
               await Promise.all(userSlugIndexKeys.map((indexKey) => kv.sadd(indexKey, slug)))
               await Promise.all([
                 kv.expire(key, SLUG_RETENTION_SECONDS),
@@ -291,6 +297,13 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
                 kv.expire(`config:${slug}`, SLUG_RETENTION_SECONDS),
                 kv.expire(ownerKey, SLUG_RETENTION_SECONDS),
               ])
+              return
+            }
+
+            const owner = readOwnerRecord(existingOwner)
+
+            if (isSlugOwner(owner, session.user)) {
+              await Promise.all(userSlugIndexKeys.map((indexKey) => kv.sadd(indexKey, slug)))
             }
           }
         }
