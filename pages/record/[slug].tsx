@@ -11,7 +11,11 @@ import {
   readOwnerRecord,
   SLUG_RETENTION_SECONDS,
 } from '../../lib/slug-access.mjs'
-import { publishAdminAlert } from '../../lib/admin-monitoring.mjs'
+import {
+  kvSetWithRetention,
+  persistRecordedRequest,
+  recordOptionalRequestMetrics,
+} from '../../lib/kv-usage.mjs'
 import { authOptions } from 'pages/api/auth/[...nextauth]'
 import PusherServer from 'pusher'
 import Pusher from 'pusher-js'
@@ -118,7 +122,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
       const body = await getBody(req)
       const timestamp = new Date()
       const timestampIso = timestamp.toISOString()
-      const today = timestampIso.split('T')[0]
       const forwarded = req.headers['x-forwarded-for']
       const ip = typeof forwarded === 'string' ? forwarded.split(/, /)[0] : req.socket.remoteAddress
 
@@ -152,71 +155,22 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
         responseBody: config.body
       }
 
-      // Store in Redis List
-      await kv.lpush(key, JSON.stringify(requestData))
-      if (hasAuthenticatedOwner) {
-        await kv.ltrim(key, 0, 99)
-      }
+      await persistRecordedRequest(key, requestData, {
+        trimList: hasAuthenticatedOwner,
+      })
 
-        // Fire-and-forget stats/expiry to reduce latency
-        ; (async () => {
-          try {
-            const adminRequestData = {
-              id: requestData.id,
-              slug,
-              timestamp: requestData.timestamp,
-              method: requestData.method,
-              ip: requestData.ip,
-              responseStatus: requestData.responseStatus,
-              accessType: hasAuthenticatedOwner ? 'authenticated' : 'guest',
-              ownerEmail:
-                typeof ownerRaw === 'string'
-                  ? (() => {
-                      try {
-                        return JSON.parse(ownerRaw).email ?? null
-                      } catch {
-                        return null
-                      }
-                    })()
-                  : (ownerRaw as any)?.email ?? null,
-            }
-
-            const work = [
-              kv.sadd('all_slugs', slug),
-              kv.lpush('admin:requests', JSON.stringify(adminRequestData)),
-              kv.ltrim('admin:requests', 0, 499),
-              kv.incr('stats:requests:all-time'),
-              kv.incr(hasAuthenticatedOwner ? 'stats:requests:authenticated' : 'stats:requests:guest'),
-              kv.incr(`stats:total:${today}`),
-              kv.incr(`stats:slug:${slug}:${today}`)
-            ]
-
-            work.push(
-              kv.expire(key, SLUG_RETENTION_SECONDS),
-              kv.expire(activeKey, SLUG_RETENTION_SECONDS),
-              kv.expire(configKey, SLUG_RETENTION_SECONDS)
-            )
-
-            if (hasAuthenticatedOwner) {
-              work.push(kv.expire(ownerKey, SLUG_RETENTION_SECONDS))
-            }
-
-            await Promise.all(work)
-
-            await publishAdminAlert({
-              type: 'request-logged',
-              slug,
-              message: `${requestData.method} request logged for ${slug}.`,
-              metadata: {
-                requestId: requestData.id,
-                responseStatus: requestData.responseStatus ?? 200,
-                accessType: hasAuthenticatedOwner ? 'authenticated' : 'guest',
-              },
-            })
-          } catch (e) {
-            console.error('Non-fatal stats/expire failure', e)
-          }
-        })()
+      ;(async () => {
+        try {
+          await recordOptionalRequestMetrics({
+            slug,
+            requestData,
+            hasAuthenticatedOwner,
+            ownerRaw: ownerRaw as { email?: string | null } | string | null,
+          })
+        } catch (error) {
+          console.error('Non-fatal request metrics failure', error)
+        }
+      })()
 
       // Trigger Pusher event for real-time update
       try {
@@ -254,14 +208,10 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
 
   // UI request (GET + Accept: text/html) - fetch data for UI
   try {
-    // Initialize slug if not already active
     if (!isActive) {
-      await kv.set(activeKey, true)
+      await kvSetWithRetention(activeKey, true)
+      await kv.sadd('all_slugs', slug)
     }
-    await Promise.all([
-      kv.sadd('all_slugs', slug),
-      kv.expire(activeKey, SLUG_RETENTION_SECONDS),
-    ])
 
     if (!session?.user) {
       appendResponseCookie(
@@ -289,14 +239,8 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res, query }
                 provider: session.user.provider ?? null,
                 createdAt: new Date().toISOString(),
               }
-              await kv.set(ownerKey, JSON.stringify(ownerData))
+              await kvSetWithRetention(ownerKey, ownerData)
               await Promise.all(userSlugIndexKeys.map((indexKey) => kv.sadd(indexKey, slug)))
-              await Promise.all([
-                kv.expire(key, SLUG_RETENTION_SECONDS),
-                kv.expire(activeKey, SLUG_RETENTION_SECONDS),
-                kv.expire(`config:${slug}`, SLUG_RETENTION_SECONDS),
-                kv.expire(ownerKey, SLUG_RETENTION_SECONDS),
-              ])
               return
             }
 
